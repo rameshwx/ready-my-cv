@@ -12,7 +12,7 @@ const schema = z.object({
   SESSION_ABSOLUTE_HOURS: z.coerce.number().positive().default(12),
   SESSION_IDLE_MINUTES: z.coerce.number().positive().default(30),
   REQUEST_BODY_LIMIT: z.coerce.number().int().positive().default(131_072),
-  DATABASE_APP_ROLE: z.string().regex(/^[a-z_][a-z0-9_]*$/).default(''),
+  DATABASE_APP_ROLE: z.string().regex(/^(?:[a-z_][a-z0-9_]*)?$/).default(''),
   CAPTCHA_SECRET: z.string().optional(),
 });
 
