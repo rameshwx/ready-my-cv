@@ -28,3 +28,12 @@ test('server contains no JWT or CV upload endpoints and uses session cookies', a
   assert.match(auth, /httpOnly:\s*true/);
   assert.match(auth, /sameSite:\s*'strict'/);
 });
+
+test('CSP allows only the trusted Flutter and Cloudflare runtime origins', async () => {
+  const app = await readFile(new URL('../src/app.ts', import.meta.url), 'utf8');
+  assert.match(app, /https:\/\/static\.cloudflareinsights\.com/);
+  assert.match(app, /https:\/\/cloudflareinsights\.com/);
+  assert.match(app, /https:\/\/www\.gstatic\.com/);
+  assert.match(app, /https:\/\/fonts\.gstatic\.com/);
+  assert.doesNotMatch(app, /https:\/\/\*/);
+});

@@ -57,10 +57,16 @@ export async function buildApp() {
       directives: {
         defaultSrc: ["'self'"],
         baseUri: ["'self'"],
-        scriptSrc: ["'self'", "'wasm-unsafe-eval'"],
+        scriptSrc: [
+          "'self'",
+          "'wasm-unsafe-eval'",
+          'https://static.cloudflareinsights.com',
+          'https://www.gstatic.com',
+        ],
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", 'data:'],
-        connectSrc: ["'self'"],
+        connectSrc: ["'self'", 'https://cloudflareinsights.com', 'https://www.gstatic.com'],
+        fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
         workerSrc: ["'self'", 'blob:'],
         objectSrc: ["'none'"],
         frameAncestors: ["'none'"],
