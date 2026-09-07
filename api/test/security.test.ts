@@ -31,9 +31,21 @@ test('server contains no JWT or CV upload endpoints and uses session cookies', a
 
 test('CSP allows only the trusted Flutter and Cloudflare runtime origins', async () => {
   const app = await readFile(new URL('../src/app.ts', import.meta.url), 'utf8');
-  assert.match(app, /https:\/\/static\.cloudflareinsights\.com/);
-  assert.match(app, /https:\/\/cloudflareinsights\.com/);
-  assert.match(app, /https:\/\/www\.gstatic\.com/);
-  assert.match(app, /https:\/\/fonts\.gstatic\.com/);
-  assert.doesNotMatch(app, /https:\/\/\*/);
+  const directive = (name: string) => {
+    const match = app.match(new RegExp(`${name}:\\s*\\[(.*?)\\]`, 's'));
+    assert.ok(match, `Missing CSP directive: ${name}`);
+    return match[1];
+  };
+
+  const scriptSrc = directive('scriptSrc');
+  const connectSrc = directive('connectSrc');
+  const fontSrc = directive('fontSrc');
+  assert.match(scriptSrc, /https:\/\/static\.cloudflareinsights\.com/);
+  assert.match(scriptSrc, /https:\/\/www\.gstatic\.com/);
+  assert.doesNotMatch(scriptSrc, /unsafe-inline|https:\/\/\*/);
+  assert.match(connectSrc, /https:\/\/cloudflareinsights\.com/);
+  assert.match(connectSrc, /https:\/\/www\.gstatic\.com/);
+  assert.match(connectSrc, /https:\/\/fonts\.gstatic\.com/);
+  assert.doesNotMatch(connectSrc, /https:\/\/\*/);
+  assert.match(fontSrc, /https:\/\/fonts\.gstatic\.com/);
 });

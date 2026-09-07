@@ -65,7 +65,12 @@ export async function buildApp() {
         ],
         styleSrc: ["'self'", "'unsafe-inline'"],
         imgSrc: ["'self'", 'data:'],
-        connectSrc: ["'self'", 'https://cloudflareinsights.com', 'https://www.gstatic.com'],
+        connectSrc: [
+          "'self'",
+          'https://cloudflareinsights.com',
+          'https://www.gstatic.com',
+          'https://fonts.gstatic.com',
+        ],
         fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
         workerSrc: ["'self'", 'blob:'],
         objectSrc: ["'none'"],
