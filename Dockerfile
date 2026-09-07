@@ -33,4 +33,5 @@ COPY --chown=node:node api/migrations migrations
 COPY --from=flutter-build --chown=node:node /src/apps/web/build/web public
 USER node
 EXPOSE 8080
+HEALTHCHECK --interval=5s --timeout=5s --start-period=20s --retries=10 CMD ["node", "-e", "fetch('http://127.0.0.1:8080/health/ready').then(r=>process.exit(r.status===200?0:1)).catch(()=>process.exit(1))"]
 CMD ["node", "dist/server.js"]
