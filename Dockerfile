@@ -1,4 +1,4 @@
-FROM ghcr.io/cirruslabs/flutter:3.32.0 AS flutter-build
+FROM ghcr.io/cirruslabs/flutter:3.32.2 AS flutter-build
 WORKDIR /src
 COPY pubspec.yaml .
 COPY apps/web/pubspec.yaml apps/web/pubspec.yaml
