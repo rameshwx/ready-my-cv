@@ -31,6 +31,10 @@ COPY --from=node-build --chown=node:node /src/api/node_modules node_modules
 COPY --from=node-build --chown=node:node /src/api/dist dist
 COPY --chown=node:node api/migrations migrations
 COPY --from=flutter-build --chown=node:node /src/apps/web/build/web public
+USER root
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
 USER node
 EXPOSE 8080
 HEALTHCHECK --interval=5s --timeout=5s --start-period=20s --retries=10 CMD ["node", "-e", "fetch('http://127.0.0.1:8080/health/ready').then(r=>process.exit(r.status===200?0:1)).catch(()=>process.exit(1))"]
