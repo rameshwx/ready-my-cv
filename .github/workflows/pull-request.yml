@@ -36,6 +36,13 @@ jobs:
         working-directory: apps/web
       - run: flutter test --platform chrome
         working-directory: apps/web
+      - run: flutter build web --release --no-source-maps
+        working-directory: apps/web
+      - name: Assert browser-only web shell
+        run: |
+          test ! -e apps/web/web/manifest.json
+          test ! -e apps/web/build/web/manifest.json
+          ! rg -n -i 'rel="manifest"|mobile-web-app-capable|apple-mobile-web-app|apple-touch-icon' apps/web/web/index.html apps/web/build/web/index.html
       - run: npm ci && npm run typecheck && npm run build && npm test && npm run db:migrate && npm run db:seed
         working-directory: api
       - run: dart run evaluation/bin/run_baseline.dart && dart run evaluation/bin/run_agents.dart && dart run evaluation/bin/compare_results.dart
