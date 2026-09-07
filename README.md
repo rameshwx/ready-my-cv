@@ -59,6 +59,6 @@ The generated evaluation output records 20 cases, 100 gold-labelled requirements
 
 ## Deployment
 
-Create one Coolify project containing the root-Dockerfile application and one private PostgreSQL resource. Configure `cv.uxi.asia`, HTTPS, `.env.example` values as secrets, run `node dist/db/migrate.js` and `node dist/db/seed.js` during initialization, and use `/health/ready` as the readiness check. PostgreSQL port 5432 must not be public. See [the deployment runbook](docs/coolify-deployment.md) and [the operations guide](docs/postgresql-node-operations.md).
+Create one Coolify project containing the root-Dockerfile application and one private PostgreSQL resource. Configure `cv.uxi.asia`, HTTPS, `.env.example` values as secrets, run `node dist/db/migrate.js` and `node dist/db/seed.js` during initialization, and use `/health/ready` as the readiness check. PostgreSQL port 5432 must not be public. Coolify builds this repository directly from `main` after the GitHub push webhook is accepted; the GHCR workflow is a CI artifact publisher, not a second deployment path. See [the deployment runbook](docs/coolify-deployment.md) and [the operations guide](docs/postgresql-node-operations.md).
 
 The application is MIT licensed. PDF.js is Apache-2.0; Flutter/Dart packages and Node dependencies use compatible permissive licenses. Review the lockfiles in automated dependency/license checks before each release.
