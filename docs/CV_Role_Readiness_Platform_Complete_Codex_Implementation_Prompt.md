@@ -1,5 +1,5 @@
 
-# Codex Implementation Prompt: CV Role-Readiness Platform
+# Codex Implementation Prompt: Ready My CV
 
 Copy this entire prompt into Codex to implement the product.
 
@@ -7,15 +7,27 @@ Copy this entire prompt into Codex to implement the product.
 
 ## Role
 
-Act as the lead product engineer, Flutter architect, Node.js API engineer, PostgreSQL engineer, DevOps engineer, security reviewer, and QA engineer for this project. Build the complete product described below. Do not stop at a visual prototype or a scaffold. Implement the working applications, shared domain engine, database, Node.js API, tests, evaluation harness, Docker deployment, CI/CD, documentation, and GitHub repository setup.
+Act as the lead product engineer, Flutter architect, Node.js API engineer, PostgreSQL engineer, DevOps engineer, security reviewer, and QA engineer for this project. Build the complete product described below. Do not stop at a visual prototype or a scaffold. Implement the working single Flutter Web application, shared domain engine, PostgreSQL database, Node.js backend application, tests, evaluation harness, one-container Docker deployment, CI/CD, documentation, and GitHub repository setup.
 
 Work in small, verifiable increments. After each major phase, run the relevant checks and fix failures before continuing. Do not claim that a feature is complete unless it is implemented, tested, and documented.
 
-If an external credential, PostgreSQL instance, VPS, or GitHub permission is unavailable, continue implementing everything that can be completed locally, leave an explicit configuration placeholder, and report the exact remaining manual action. Never fabricate a successful deployment, repository, migration, or test result.
+If an external credential, PostgreSQL instance, VPS, Coolify project, or GitHub permission is unavailable, continue implementing everything that can be completed locally, leave an explicit configuration placeholder, and report the exact remaining manual action. Never fabricate a successful deployment, repository, migration, or test result.
 
 ## Product
 
-Build **CV Role Readiness**, a free and privacy-first web application that helps a job seeker compare a text-based PDF CV with a selected job role. It produces a deterministic Role Readiness Score from 0 to 100, explains the score through traceable evidence, and provides truthful improvement guidance.
+Build **Ready My CV**, a free and privacy-first web application that helps a job seeker compare a text-based PDF CV with a selected job role. It produces a deterministic Role Readiness Score from 0 to 100, explains the score through traceable evidence, and provides truthful improvement guidance.
+
+The production site is:
+
+~~~text
+https://cv.uxi.asia
+~~~
+
+The administrator area is:
+
+~~~text
+https://cv.uxi.asia/admin
+~~~
 
 The central product insight is:
 
@@ -27,21 +39,27 @@ The product must work without an LLM, an AI API, OCR, or a model server. The age
 
 ## Non-negotiable requirements
 
-1. Use Flutter Web for both the public application and the administrator application.
-2. Use a monorepo with two separate Flutter Web applications and shared Dart packages.
+1. Build one Flutter Web application and one web bundle. It contains both the public experience and the protected administrator experience as feature modules in the same application.
+2. Use one monorepo with the single Flutter Web application, a Node.js/TypeScript backend application, pure Dart packages, PostgreSQL migrations, tests, evaluation assets, and deployment documentation.
 3. Use Clean Architecture with feature-first organization, immutable state, clear domain boundaries, dependency injection, and testable interfaces.
 4. Use Riverpod for state management and dependency injection. Use generated providers where appropriate. Do not mix Riverpod with BLoC, GetX, or a second service-locator framework.
-5. Use GoRouter for navigation and protected administrator routes.
-6. Use PostgreSQL as the authoritative database, a Node.js LTS/TypeScript API as the only backend application boundary, versioned SQL migrations, and PostgreSQL Row-Level Security as defense in depth.
-7. Never connect Flutter directly to PostgreSQL. Never expose database credentials, JWT/session-signing secrets, admin bootstrap credentials, or other server secrets in browser code.
+5. Use GoRouter for the single route tree, including the protected administrator routes under <code>/admin</code>.
+6. Use PostgreSQL as the authoritative database and Node.js LTS with TypeScript as the only backend application boundary. Flutter must never connect directly to PostgreSQL.
+7. The browser client and backend communicate only through same-origin application routes used by this product. Do not publish, document, or support a general public API, external API base URL, CORS API, API keys for callers, or public developer contract.
 8. Process the visitor's PDF entirely in the browser using PDF.js through Dart/JavaScript interop.
 9. Never upload, store, cache, log, back up, hash, fingerprint, or transmit the PDF, extracted CV text, file name, individual score, individual recommendations, or detailed visitor analysis.
-10. Do not create any upload-CV, parse-CV, extract-PDF, score-CV, save-result, or download-CV endpoint.
-11. Do not create public accounts, registration, public login, subscriptions, pricing, paywalls, premium features, or feature limits.
-12. The only authenticated product area is the administrator portal at <code>/admin</code>.
-13. Use Docker on the VPS and GitHub Actions for CI/CD. Use GitHub Container Registry for immutable image tags.
-14. Include at least 20 safe synthetic evaluation cases with gold labels, a fair keyword baseline, final-agent results, trajectories, metrics, and an improvement changelog.
-15. All final results must pass deterministic verification before the UI displays them as complete.
+10. Do not create any upload-CV, parse-CV, extract-PDF, score-CV, save-result, or download-CV backend route.
+11. Do not create public accounts, visitor registration, public login, subscriptions, pricing, paywalls, premium features, or feature limits.
+12. The only authenticated product area is the administrator portal at <code>https://cv.uxi.asia/admin</code>.
+13. There is exactly one administrator account. Do not build administrator registration, administrator invitations, administrator deletion, administrator lists, multi-tenant identity, or administrator roles.
+14. The initial administrator username is <code>rameshwx</code> and the initial administrator password is <code>rameshwx</code>. Store only an Argon2id password hash. After login, the administrator must be able to change both username and password from the admin panel.
+15. Use a normal username-and-password login form. Do not use JWT login, bearer access tokens, refresh tokens, personal access tokens, bootstrap tokens, magic links, or token-based administrator login. Use a server-side session with a Secure, HttpOnly, SameSite cookie after successful password authentication.
+16. Invalidate active administrator sessions after logout, password change, username change, administrator deactivation, or explicit session revocation.
+17. Use Docker with one root <code>Dockerfile</code> for the complete web application and one Coolify project. The Dockerfile must build the Flutter Web bundle and Node.js application and run them together as one deployable application container.
+18. Use the PostgreSQL resource provided by the same Coolify project for persistent data. Do not embed PostgreSQL in the application container, expose its port publicly, or create a second Coolify project.
+19. Use GitHub Actions for CI/CD and GitHub Container Registry for one immutable application image tagged with the commit SHA.
+20. Include at least 20 safe synthetic evaluation cases with gold labels, a fair keyword baseline, final-agent results, trajectories, metrics, and an improvement changelog.
+21. All final results must pass deterministic verification before the UI displays them as complete.
 
 ## Repository requirement
 
@@ -59,14 +77,14 @@ Repository rules:
 - Set the local repository remote to the exact repository URL.
 - Commit the implementation in logical commits and push the default branch.
 - Confirm that the repository is public and that the pushed commit is visible remotely.
-- Do not commit secrets, <code>.env</code> files, database passwords, JWT/session-signing secrets, admin bootstrap tokens, SSH keys, or production credentials.
+- Do not commit secrets, <code>.env</code> files, database passwords, session secrets, password hashes generated for production, SSH keys, or production credentials.
 - If GitHub authentication is unavailable, finish the local implementation and report the exact authentication action required. Do not claim the repository was created.
 
 Suggested initial repository metadata:
 
 - Name: <code>cv-role-readiness</code>
 - Visibility: public
-- Description: <code>Privacy-first deterministic CV role-readiness analysis with auditable software agents</code>
+- Description: <code>Ready My CV: privacy-first deterministic CV role-readiness analysis with auditable software agents</code>
 - Default branch: <code>main</code>
 - License: choose a permissive license only after checking the licenses of all included dependencies; document the choice in <code>LICENSE</code> and <code>README.md</code>.
 
@@ -74,51 +92,52 @@ Suggested initial repository metadata:
 
 | Layer | Technology |
 | --- | --- |
-| Public web application | Flutter Web and Dart |
-| Administrator web application | Separate Flutter Web and Dart application |
+| Web application | One Flutter Web and Dart application containing public and administrator features |
 | Architecture | Clean Architecture, feature-first, immutable state |
 | State and DI | Riverpod, preferably with <code>riverpod_generator</code> where stable |
-| Navigation | GoRouter |
+| Navigation | GoRouter with one protected route tree |
 | Immutable models | Freezed and JSON serialization, or an equally strongly typed approach |
 | Design system | Shared Flutter package using Material 3 and custom theme tokens |
 | PDF extraction | PDF.js loaded locally in the browser through Dart JavaScript interop |
 | Shared business logic | Pure Dart packages with no Flutter or browser dependency where possible |
 | Agent workflow | Deterministic typed Dart workflow engine |
-| Backend application | Node.js LTS, TypeScript, Fastify, and typed HTTP route modules |
+| Backend application | Node.js LTS, TypeScript, Fastify, and typed same-origin application route modules |
 | Database | PostgreSQL |
-| Database access | `pg`/node-postgres with parameterized SQL, transactions, and a versioned migration runner |
-| Administrator authentication | Application-managed auth in the Node.js API using Argon2id password hashes, short-lived access tokens, and rotating refresh sessions |
-| API | Versioned Node.js/TypeScript HTTP API; Flutter never connects directly to PostgreSQL |
-| Authorization | Node.js API role authorization plus PostgreSQL Row-Level Security defense in depth |
-| Migrations | SQL migrations executed by a Node.js migration command such as `node-pg-migrate` |
-| Local development | Docker Compose, PostgreSQL, Node.js, and the project package manager |
-| Production deployment | Docker containers on the VPS |
-| Container registry | GitHub Container Registry |
-| CI/CD | GitHub Actions |
-| Reverse proxy | Caddy, Nginx, or the existing VPS platform proxy, with HTTPS |
-| DNS/TLS | Cloudflare and HTTPS |
-| Monitoring | Existing VPS monitoring such as Uptime Kuma |
+| Database access | <code>pg</code>/node-postgres with parameterized SQL, transactions, and a versioned migration runner |
+| Administrator authentication | Username/password authentication with Argon2id password hashes and server-side sessions in PostgreSQL |
+| Browser session transport | Secure, HttpOnly, SameSite administrator session cookie; no JWT, bearer token, or refresh-token flow |
+| Backend boundary | Internal same-origin application routes only; no public or third-party API |
+| Authorization | Valid current server-side administrator session plus PostgreSQL Row-Level Security defense in depth |
+| Migrations | Versioned SQL migrations executed by a Node.js migration command |
+| Local development | Docker, PostgreSQL, Node.js, Flutter, and the project package manager |
+| Production deployment | One application container built from the root <code>Dockerfile</code> in one Coolify project |
+| Container registry | GitHub Container Registry with one commit-SHA image |
+| CI/CD | GitHub Actions and one Coolify deployment webhook or image deployment |
+| HTTPS/DNS | Coolify-managed HTTPS for <code>cv.uxi.asia</code>, with Cloudflare DNS |
+| Monitoring | Existing VPS monitoring such as Uptime Kuma plus application health endpoints |
 | LLM | None |
 
-Use current stable versions that are mutually compatible at implementation time. Record the selected Flutter, Dart, Node.js, npm/pnpm, PostgreSQL, Docker, and browser versions in the reproduction guide. Do not introduce a dependency merely because it is popular. Every dependency must have a clear purpose, a compatible license, and automated checks where practical.
+Use current stable versions that are mutually compatible at implementation time. Record the selected Flutter, Dart, Node.js, npm/pnpm, PostgreSQL, Docker, Coolify, and browser versions in the reproduction guide. Do not introduce a dependency merely because it is popular. Every dependency must have a clear purpose, a compatible license, and automated checks where practical.
 
 ## Architecture
 
 ~~~mermaid
 flowchart TD
-    Visitor[Visitor browser] --> Public[Flutter public web app]
-    Admin[Administrator at /admin] --> AdminApp[Flutter admin web app]
-    Public --> Pdf[Local PDF.js adapter]
-    Pdf --> Agents[Local Dart agent orchestrator]
-    Agents --> Result[Local result state]
-    Public --> Catalog[Node.js public catalog API]
-    AdminApp --> AdminApi[Node.js admin API]
-    AdminApi --> Auth[Application authentication and role middleware]
-    Catalog --> Database[(PostgreSQL)]
-    AdminApi --> Database
+    Browser[Browser at cv.uxi.asia] --> Flutter[Single Flutter Web application]
+    Flutter --> Local[Local PDF.js and Dart agent workflow]
+    Local --> Memory[In-memory result and trajectory]
+    Flutter --> Internal[Same-origin internal application routes]
+    Internal --> Node[Node.js application server]
+    Node --> PostgreSQL[(PostgreSQL in the same Coolify project)]
+    Admin[/admin route/] --> Session[Server-side administrator session cookie]
+    Session --> Node
 ~~~
 
-The CV document and extracted text may flow only between the browser file picker, the local PDF.js adapter, the local agent workflow, and the in-memory result view. They must never flow to the Node.js API, PostgreSQL, server logs, analytics, ad providers, PayPal, browser storage, service-worker caches, URLs, or backups.
+The public and administrator experiences are features of the same Flutter Web bundle. The Node.js application serves that bundle and handles only the internal same-origin application routes needed for the catalog, role requests, aggregate events, administrator session, catalog management, settings, and health checks.
+
+The CV document and extracted text may flow only between the browser file picker, the local PDF.js adapter, the local agent workflow, and the in-memory result view. They must never flow to the Node.js application, PostgreSQL, server logs, analytics, ad providers, PayPal, browser storage, service-worker caches, URLs, or backups.
+
+There is no separately exposed public API. A browser route such as <code>/app/catalog</code> is an implementation detail of the same-origin application and must not be treated as an external API, accept cross-origin access, or expose a reusable API contract.
 
 ## Monorepo structure
 
@@ -127,43 +146,37 @@ Create a maintainable monorepo similar to this. Adjust names only when there is 
 ~~~text
 cv-role-readiness/
 ├── apps/
-│   ├── public_web/
-│   │   ├── lib/
-│   │   │   ├── app/
-│   │   │   │   ├── bootstrap/
-│   │   │   │   ├── router/
-│   │   │   │   ├── theme/
-│   │   │   │   └── app.dart
-│   │   │   ├── core/
-│   │   │   │   ├── config/
-│   │   │   │   ├── errors/
-│   │   │   │   ├── localization/
-│   │   │   │   ├── logging/
-│   │   │   │   ├── network/
-│   │   │   │   └── providers/
-│   │   │   └── features/
-│   │   │       ├── landing/
-│   │   │       ├── scan/
-│   │   │       ├── results/
-│   │   │       ├── role_request/
-│   │   │       ├── privacy/
-│   │   │       └── terms/
-│   │   ├── test/
-│   │   └── web/
-│   └── admin_web/
+│   └── web/
 │       ├── lib/
 │       │   ├── app/
+│       │   │   ├── bootstrap/
+│       │   │   ├── router/
+│       │   │   ├── theme/
+│       │   │   └── app.dart
 │       │   ├── core/
+│       │   │   ├── config/
+│       │   │   ├── errors/
+│       │   │   ├── localization/
+│       │   │   ├── logging/
+│       │   │   ├── network/
+│       │   │   └── providers/
 │       │   └── features/
-│       │       ├── authentication/
-│       │       ├── dashboard/
-│       │       ├── roles/
-│       │       ├── rule_versions/
-│       │       ├── catalog_publication/
-│       │       ├── role_requests/
-│       │       ├── audit_logs/
-│       │       ├── administrators/
-│       │       └── settings/
+│       │       ├── landing/
+│       │       ├── scan/
+│       │       ├── results/
+│       │       ├── role_request/
+│       │       ├── privacy/
+│       │       ├── terms/
+│       │       └── admin/
+│       │           ├── authentication/
+│       │           ├── dashboard/
+│       │           ├── roles/
+│       │           ├── rule_versions/
+│       │           ├── catalog_publication/
+│       │           ├── role_requests/
+│       │           ├── audit_logs/
+│       │           ├── account/
+│       │           └── settings/
 │       ├── test/
 │       └── web/
 ├── packages/
@@ -191,12 +204,13 @@ cv-role-readiness/
 │   │   │   ├── queries/
 │   │   │   └── transactions.ts
 │   │   ├── modules/
-│   │   │   ├── auth/
+│   │   │   ├── authentication/
 │   │   │   ├── catalog/
 │   │   │   ├── roles/
 │   │   │   ├── role_requests/
 │   │   │   ├── metrics/
 │   │   │   ├── audit/
+│   │   │   ├── account/
 │   │   │   └── settings/
 │   │   ├── plugins/
 │   │   ├── routes/
@@ -210,27 +224,19 @@ cv-role-readiness/
 │   ├── tsconfig.json
 │   └── README.md
 ├── infrastructure/
-│   ├── docker/
-│   │   ├── public-web.Dockerfile
-│   │   ├── admin-web.Dockerfile
-│   │   ├── api.Dockerfile
-│   │   └── nginx.conf
-│   ├── compose/
-│   │   ├── docker-compose.yml
-│   │   ├── docker-compose.production.yml
-│   │   └── .env.example
 │   ├── scripts/
-│   │   ├── deploy.sh
 │   │   ├── health-check.sh
-│   │   └── rollback.sh
-│   └── cloudflare/
+│   │   └── rollback-notes.sh
+│   └── coolify/
+│       └── deployment.md
 ├── docs/
 │   ├── architecture.md
 │   ├── local-development.md
 │   ├── reproduction-guide.md
 │   ├── privacy-model.md
 │   ├── security-model.md
-│   ├── postgresql-api-operations.md
+│   ├── postgresql-node-operations.md
+│   ├── coolify-deployment.md
 │   ├── evaluation-methodology.md
 │   ├── improvement-changelog.md
 │   ├── agent-trajectories/
@@ -240,31 +246,36 @@ cv-role-readiness/
 │       ├── pull-request.yml
 │       ├── build.yml
 │       └── deploy.yml
+├── Dockerfile
+├── .dockerignore
 ├── README.md
 ├── LICENSE
 ├── melos.yaml or pub workspace configuration
 └── analysis_options.yaml
 ~~~
 
+Do not create <code>public_web</code> and <code>admin_web</code> applications, separate frontend Dockerfiles, an API Dockerfile, a reverse-proxy container, Docker Compose files, or a second Coolify application for this project.
+
+
 ## Flutter architecture rules
 
-Apply these rules to both Flutter applications and every shared package.
+Apply these rules to the single Flutter application and every shared package.
 
 ### Layers
 
 - Presentation: widgets, screens, routing, UI state rendering, accessibility, and user interaction only.
 - Application: Riverpod notifiers/controllers, workflow coordination, commands, and use cases.
 - Domain: entities, value objects, repository contracts, policies, scoring, agents, and domain errors.
-- Data: Node.js API data sources, DTOs, mappers, PDF.js adapter, configuration, and repository implementations.
+- Data: Node.js same-origin application data sources, DTOs, mappers, PDF.js adapter, configuration, and repository implementations.
 
-Widgets must not contain scoring logic, direct Node.js API queries, raw HTTP calls, PDF parsing, or catalog validation. Providers must depend on abstractions and compose concrete implementations in one bootstrap/DI location.
+Widgets must not contain scoring logic, direct Node.js route calls, raw HTTP calls, PDF parsing, or catalog validation. Providers must depend on abstractions and compose concrete implementations in one bootstrap/DI location.
 
 ### Dependency injection
 
 - Use Riverpod providers as the dependency graph.
 - Define abstract repository and service interfaces in the domain layer.
 - Provide concrete implementations in the data layer.
-- Keep the public app's local scanner dependencies separate from remote catalog/config dependencies.
+- Keep local scanner dependencies separate from catalog/config and administrator-session dependencies.
 - Use <code>ProviderScope</code> overrides in tests and previews.
 - Make every external dependency replaceable with a fake or in-memory implementation.
 - Do not instantiate repositories or clients inside widgets.
@@ -275,18 +286,19 @@ Widgets must not contain scoring logic, direct Node.js API queries, raw HTTP cal
 - Use immutable state models.
 - Use <code>AsyncValue</code> or explicit sealed states for loading, success, failure, and cancellation.
 - Represent the scanner as an explicit state machine: idle, loadingCatalog, selectingFile, validatingFile, extracting, analyzing, verifying, completed, failed, cancelled.
+- Represent the administrator session as: unknown, signedOut, signingIn, signedIn, changingCredentials, signingOut, expired, and failure.
 - Disable duplicate actions while a run is active.
 - Support cancellation and clear all volatile CV state when the user starts another scan or leaves the result flow.
 - Keep UI state separate from domain workflow state.
-- Do not store the selected PDF, CV text, or result in <code>localStorage</code>, IndexedDB, URL parameters, cookies, or service-worker storage.
+- Do not store the selected PDF, CV text, or result in <code>localStorage</code>, IndexedDB, URL parameters, cookies, or service-worker storage. The administrator session cookie is server-managed and must not contain CV data.
 
 ### Package boundaries
 
 The scoring engine, agent engine, catalog models, validation package, and test fixtures must be usable by the evaluation CLI without importing Flutter. Shared packages must not depend on application widgets.
 
-## Public application
+## Web application routes
 
-Implement these routes:
+Build one Flutter Web bundle with one GoRouter configuration.
 
 | Route | Screen |
 | --- | --- |
@@ -296,7 +308,19 @@ Implement these routes:
 | <code>/request-role</code> | Missing-role request form without attachments |
 | <code>/privacy</code> | Privacy policy and third-party provider disclosures |
 | <code>/terms</code> | Terms, limitations, and non-hiring disclaimer |
-| <code>/admin</code> | Administrator application entry point or redirect to the admin build |
+| <code>/admin</code> | Administrator username/password login |
+| <code>/admin/dashboard</code> | Aggregate dashboard |
+| <code>/admin/roles</code> | Job-role catalog management |
+| <code>/admin/rule-versions</code> | Draft and published rule-version management |
+| <code>/admin/publication</code> | Validation, diff, publish, and rollback |
+| <code>/admin/role-requests</code> | Missing-role request triage |
+| <code>/admin/audit-logs</code> | Safe administrator audit log |
+| <code>/admin/account</code> | Change the single administrator username and password |
+| <code>/admin/settings</code> | Public settings such as donation URL and ad flags |
+
+All routes are served by the same Node.js application and the same Flutter bundle. The <code>/admin</code> route is protected in both the Flutter router and the backend session middleware. Refreshing an administrator route must preserve the route while requiring a valid server session.
+
+## Public experience
 
 ### Landing page content
 
@@ -319,7 +343,7 @@ Display this disclaimer on the result view:
 
 ### Scan flow
 
-1. Fetch the current published catalog from the Node.js API.
+1. Fetch the current published catalog through a same-origin application route.
 2. Search and select a supported role.
 3. Select an optional seniority level.
 4. Pick a local PDF or drop it into the local file zone.
@@ -374,7 +398,7 @@ Accept only:
 - Reply email: optional and validated.
 - Anti-spam proof: honeypot plus server-side rate limiting and CAPTCHA/equivalent if configured.
 
-Do not accept attachments, CV text, PDFs, job-description files, or visitor accounts. Return a neutral success response that does not expose internal workflow details.
+Do not accept attachments, CV text, PDFs, job-description files, or visitor accounts. Submit the small, validated form only to the same-origin application route. Return a neutral success response that does not expose internal workflow details.
 
 ### Donations and advertising
 
@@ -387,46 +411,76 @@ Support an optional PayPal tip link and optional advertisements only outside the
 - Never pass CV text, file name, score details, or recommendations to PayPal or an ad provider.
 - Make both integrations feature-flagged and easy to disable.
 
-## Administrator application
+## Administrator experience
 
-Build the admin application as a separate Flutter Web target with the same shared design system and domain models.
+The administrator experience is not a second web application. It is the protected <code>/admin</code> feature area in the same Flutter Web application and the same Node.js application container.
 
 Canonical entry point:
 
 ~~~text
-/admin
+https://cv.uxi.asia/admin
 ~~~
 
-Unauthenticated users see only the admin login page. Authenticated users can access the portal according to their administrator role.
+Unauthenticated visitors see only the administrator login screen. Authenticated visitors with the current administrator session can access the administrator portal. There is exactly one administrator identity and no administrator role hierarchy.
 
-### Authentication
+### Normal username-and-password authentication
 
-- Use the Node.js API's application-managed authentication for administrator login, session refresh, logout, and revocation.
-- Store only Argon2id password hashes in PostgreSQL; never store plaintext passwords.
-- Issue short-lived access tokens and rotate opaque refresh tokens stored only as hashes in PostgreSQL. Keep the access token in the admin app's memory and use a Secure, HttpOnly, SameSite refresh cookie; never put tokens in <code>localStorage</code> or IndexedDB.
-- Use HTTPS in production.
-- Use protected providers and GoRouter redirects.
-- Handle session expiry and refresh failures gracefully.
-- Rate-limit failed logins by IP and account identifier without logging raw credentials.
-- Never expose database credentials, JWT/session-signing secrets, or admin bootstrap tokens in either Flutter bundle.
-- Provide a private CLI/bootstrap command for creating the first administrator; do not create public registration or password-reset endpoints without an explicit protected design.
+Implement the login screen with:
 
-### Admin roles
+- Username field.
+- Password field.
+- Sign-in button.
+- Clear invalid-credentials and rate-limit messages that do not reveal which field was wrong.
+- No registration, invitation, email login, magic link, token input, or password-reset link.
 
-Implement at least:
+Initial default credentials:
 
-- <code>super_admin</code>: administrators, settings, catalog publication, audit logs, all content workflows.
-- <code>content_admin</code>: roles, skills, aliases, rules, draft validation, role requests.
-- <code>analytics_viewer</code>: aggregate metrics and health data only.
+~~~text
+Username: rameshwx
+Password: rameshwx
+~~~
 
-### Admin screens
+These values are used only to initialize an empty database. The application must store only an Argon2id hash of the password. The default password must never be written to logs, returned by a route, embedded in the Flutter bundle, or displayed after initialization. Show a prominent first-login reminder and set a server-side <code>force_password_change</code> flag until the administrator changes the credentials.
+
+Use a server-side session after successful login:
+
+- Generate a cryptographically random session identifier on the server.
+- Store only a one-way hash of the session identifier in <code>admin_sessions</code>.
+- Send the identifier only in a Secure, HttpOnly, SameSite cookie named for this application.
+- Keep administrator session state out of <code>localStorage</code>, IndexedDB, URL parameters, and Flutter-managed persistent storage.
+- Resolve the current administrator from the session record on every protected request.
+- Rotate the session identifier at login and after credential changes.
+- Apply an absolute session lifetime and an idle timeout.
+- Revoke the session on logout and revoke all sessions after a username or password change.
+- Do not return a bearer token, JWT, access token, refresh token, bootstrap token, or session secret to Flutter or to any caller.
+
+Use HTTPS in production, CSRF protection for state-changing cookie-authenticated routes, protected providers, and GoRouter redirects. Handle expiry, revocation, and refresh failures gracefully. “Refresh” means checking or renewing a server-side cookie session; it is not a refresh-token API.
+
+Rate-limit failed logins by client network address and normalized username without logging raw credentials. Do not expose database credentials, session-hashing secrets, or initial credential environment variables in the Flutter bundle.
+
+### Credential-management screen
+
+Implement <code>/admin/account</code> with:
+
+- Current password required for every credential change.
+- Optional new username field, validated for length and allowed characters.
+- Optional new password and confirmation fields.
+- Minimum password length and strength checks.
+- A clear indication that submitting the form logs out all active sessions.
+- A success state that returns the administrator to the login screen.
+- An audit event that records the credential-change action without recording usernames, passwords, password hashes, or session values.
+- A forced first-login flow that cannot be dismissed until the default password is changed.
+
+The update must be atomic. It may change the username, password, or both, but it must reject a request that changes neither. It must never reveal whether another username exists because no second administrator may be created. A private server-side maintenance command may reinitialize the singleton account only with direct deployment access; do not build a public reset endpoint.
+
+### Administrator screens
 
 Implement:
 
-- Login/logout/session state.
+- Login, logout, and current-session state.
 - Dashboard with aggregate metrics only.
 - Role list, search, filter, create, edit, deactivate, and archive.
-- Rule version list and detail editor.
+- Rule-version list and detail editor.
 - Skill, alias, phrase, exclusion, weight, category, and section-rule editor.
 - Draft validation with actionable errors.
 - Draft preview against bundled synthetic CV text only.
@@ -435,10 +489,13 @@ Implement:
 - Publication history and safe rollback by republishing a valid previous snapshot.
 - Role-request triage with statuses: new, reviewing, planned, added, rejected, duplicate.
 - Safe audit-log viewer.
-- Administrator management for super administrators.
+- Single-administrator account screen for changing username and password.
 - Public settings such as donation URL and ad flags.
 
-The admin portal must never show visitor CV files, extracted CV text, file names, document hashes, individual scores, detailed visitor results, or visitor-level analysis history.
+Do not implement an administrators list, administrator CRUD, user management, role-based admin permissions, invitations, or multi-tenant access.
+
+The administrator portal must never show visitor CV files, extracted CV text, file names, document hashes, individual scores, detailed visitor results, or visitor-level analysis history.
+
 
 ## Local PDF.js implementation
 
@@ -450,7 +507,7 @@ abstract interface class LocalPdfParser {
 }
 ~~~
 
-Implement the production web adapter using PDF.js loaded locally as a static asset. Use Dart JavaScript interop, not a server endpoint. The adapter must:
+Implement the production web adapter using PDF.js loaded locally as a static asset. Use Dart JavaScript interop, not a server route. The adapter must:
 
 - Accept bytes from the browser file picker.
 - Pass them to PDF.js as an in-memory <code>Uint8Array</code>.
@@ -487,6 +544,8 @@ Create strongly typed immutable models for at least:
 - <code>TrajectoryEntry</code>
 - <code>VerificationResult</code>
 - <code>DomainFailure</code>
+- <code>AdminSessionState</code>
+- <code>AdminAccountUpdate</code>
 
 Every evidence item should be able to reference, where available:
 
@@ -499,6 +558,8 @@ Every evidence item should be able to reference, where available:
 - Page number.
 - Source span offsets.
 - Matching rule/tool used.
+
+Administrator domain models must contain no password, password hash, session identifier, cookie value, or other secret. Credentials are accepted only by the authentication data source and never placed in persistent Flutter state.
 
 ## Deterministic agent system
 
@@ -651,9 +712,10 @@ Checks:
 - No duplicate rule credit exists.
 - The catalog version and engine version are present.
 - The trajectory is complete and ordered.
-- No forbidden CV data was passed to any remote repository or client.
+- No forbidden CV data was passed to any remote route or client-side persistence layer.
 
 If verification fails, do not display a completed result. Allow one bounded corrective retry for the relevant stage, record the failure and correction in the trajectory, then fail safely if verification still fails.
+
 
 ## Agent contracts and orchestration
 
@@ -680,6 +742,7 @@ The orchestrator must:
 - Stop on invalid catalog, parse failure, or verification failure.
 - Produce the same result for the same document text, role, catalog version, and engine version.
 - Never silently alter the role catalog or scoring policy.
+- Keep all CV bytes, extracted text, evidence, scores, and trajectories in scoped memory during the visitor run.
 
 The workflow sequence is:
 
@@ -713,11 +776,11 @@ Capture an in-memory trajectory entry for every agent step:
 }
 ~~~
 
-The public app may display this trajectory during the current session, but never uploads or persists it. Evaluation trajectories may be exported because they use synthetic CVs only.
+The public experience may display this trajectory during the current session, but never uploads or persists it. Evaluation trajectories may be exported because they use synthetic CVs only. The administrator must never receive visitor trajectories.
 
 ## Rule catalog and seed data
 
-Use PostgreSQL as the authoritative authoring store. A published catalog must be an immutable, versioned JSON snapshot downloaded by the public browser through the Node.js API.
+Use PostgreSQL as the authoritative authoring store. A published catalog must be an immutable, versioned JSON snapshot downloaded by the Flutter browser through a same-origin application route.
 
 Seed at least these roles:
 
@@ -753,14 +816,14 @@ Validate catalogs for duplicate terms, invalid weights, empty mandatory fields, 
 
 ## PostgreSQL database
 
-Create versioned SQL migrations, indexes, constraints, Row-Level Security policies, seed data, and tests for at least these tables. Run migrations through the Node.js migration command and use a non-superuser application database role at runtime:
+Create versioned SQL migrations, indexes, constraints, Row-Level Security policies, seed data, and tests for at least these tables. Run migrations through the Node.js migration command and use a non-owner, non-superuser application database role at runtime:
 
 | Table | Purpose |
 | --- | --- |
-| <code>admin_users</code> | Administrator identity, email, Argon2id password hash, role, active status, and audit identity |
-| <code>admin_sessions</code> | Hashed rotating refresh tokens, expiry, last-used time, and revocation state; never store raw refresh tokens |
-| <code>job_roles</code> | Stable identity and metadata for supported roles |
-| <code>role_rule_versions</code> | Draft/published/archived versions for a role and seniority |
+| <code>admin_account</code> | The single administrator identity, username, Argon2id password hash, first-login flag, active status, and timestamps; enforce exactly one row |
+| <code>admin_sessions</code> | One-way hashes of server-side session identifiers, expiry, idle timeout, last-used time, and revocation state; never store raw cookie values |
+| <code>job_roles</code> | Stable identity and metadata for supported job roles |
+| <code>role_rule_versions</code> | Draft, published, and archived versions for a role and seniority |
 | <code>role_rules</code> | Weighted required/preferred skill and evidence rules |
 | <code>rule_aliases</code> | Approved aliases and matching behavior |
 | <code>rule_exclusions</code> | Ambiguous or excluded phrases |
@@ -775,33 +838,46 @@ Create versioned SQL migrations, indexes, constraints, Row-Level Security polici
 
 Database rules:
 
-- The Node.js API owns administrator authentication. Store only Argon2id password hashes and never plaintext passwords or raw refresh tokens.
+- The <code>admin_account</code> table must enforce a singleton key, such as <code>id = 1</code>. No second administrator row may ever be inserted.
+- The Node.js application owns administrator authentication. Store only an Argon2id password hash and never plaintext passwords.
 - Never create a visitor/user table for public scanning.
-- Enable RLS on every application table. The API must connect with a non-owner, non-superuser role and set transaction-local request identity (for example, <code>app.user_id</code> and <code>app.user_role</code>) before protected queries; policies must use that identity.
-- Flutter must never connect directly to PostgreSQL. Public read access is exposed only through allowlisted Node.js API queries for the current published catalog and safe public settings.
-- Drafts, unpublished rules, role requests, audit logs, metrics, and administrator records are private and protected by both API authorization and RLS.
+- Enable RLS on every application table. The API must connect with a non-owner, non-superuser role and set transaction-local request identity, such as <code>app.admin_authenticated</code>, only after validating the current server-side session.
+- Use a narrowly scoped, locked-down database function or query for pre-authentication lookup of the singleton password hash. It must expose no unrelated administrator data and must not disable RLS broadly.
+- Flutter must never connect directly to PostgreSQL. Public catalog/config reads and role-request submission are allowlisted same-origin application routes, not a public API.
+- Drafts, unpublished rules, role requests, audit logs, metrics, administrator records, and session records are private and protected by both backend authorization and RLS.
 - Use foreign keys, unique constraints, check constraints, indexes, and transactions.
 - Published snapshots are immutable.
 - Catalog publication must atomically validate, snapshot, mark the version published, and create an audit event.
+- A username/password change must atomically update the singleton account, set or clear the first-login flag as appropriate, revoke all sessions, and create a redacted audit event.
 - PostgreSQL must not be exposed on a public port in production.
 - Do not create any table for CV files, CV text, individual results, or visitor history.
 
-## Node.js API
 
-Implement the following logical operations in a versioned Node.js/TypeScript API backed by parameterized PostgreSQL queries and transactions. Use Fastify or an equally typed HTTP framework, a PostgreSQL client such as <code>pg</code>, explicit request/response schemas, and structured redacted logging. Flutter applications must call the API through repository abstractions; they must never call PostgreSQL directly.
+## Node.js application server
 
-### Public operations
+The Node.js/TypeScript process is the backend boundary for this single application. It serves the compiled Flutter Web files and implements only the same-origin application routes required by the product. It is not a standalone public API. Do not publish API documentation, support third-party clients, enable cross-origin API access, or expose a public API base URL.
 
-- <code>GET /api/v1/public/catalog</code>: current published catalog JSON, version, roles, and rules required for local analysis.
-- <code>GET /api/v1/public/config</code>: safe public configuration such as donation URL and ad flags.
-- <code>POST /api/v1/public/role-requests</code>: validated role request with no attachments or CV data.
-- <code>POST /api/v1/public/metrics</code>: optional allowlisted aggregate event with no CV content.
+Use Fastify or an equally typed HTTP framework, a PostgreSQL client such as <code>pg</code>, explicit request/response schemas, parameterized SQL, transactions, and structured redacted logging. Flutter applications must call the backend through repository abstractions; they must never call PostgreSQL directly.
 
-### Administrator operations
+### Same-origin application routes
 
-- <code>POST /api/v1/admin/auth/login</code>, <code>POST /api/v1/admin/auth/logout</code>, <code>POST /api/v1/admin/auth/refresh</code>, and <code>GET /api/v1/admin/auth/session</code>.
+These routes are internal browser-application routes. They must accept only the defined request shapes and must not be presented as a public API.
+
+Public-facing application routes:
+
+- <code>GET /app/catalog</code>: current published catalog JSON, version, roles, and rules required for local analysis.
+- <code>GET /app/config</code>: safe public configuration such as donation URL and ad flags.
+- <code>POST /app/role-requests</code>: validated role request with no attachments or CV data.
+- <code>POST /app/metrics</code>: optional allowlisted aggregate event with no CV content.
+
+Administrator application routes:
+
+- <code>POST /app/admin/login</code>: username/password form login that sets the server-side session cookie.
+- <code>GET /app/admin/session</code>: return only safe current-session state and the first-login/password-change requirement.
+- <code>POST /app/admin/logout</code>: revoke the current server-side session and clear the cookie.
+- <code>PATCH /app/admin/account</code>: atomically change the single administrator username, password, or both after verifying the current password.
 - Dashboard aggregate metrics and service health.
-- Role CRUD and activation/archive operations.
+- Job-role CRUD and activation/archive operations.
 - Draft rule-version CRUD.
 - Draft validation.
 - Catalog diff.
@@ -809,35 +885,80 @@ Implement the following logical operations in a versioned Node.js/TypeScript API
 - Safe rollback by republishing an earlier valid snapshot.
 - Role-request triage.
 - Audit-log viewing.
-- Administrator management.
 - Public settings management.
 
-Recommended API route modules:
+Use same-origin relative URLs in Flutter. Do not compile an API base URL, API key, database credential, signing secret, or administrator credential into the browser bundle.
 
-- <code>public-catalog</code> and <code>public-config</code>
+### Recommended route modules
+
+Organize the Node.js application into modules such as:
+
+- <code>catalog</code> and <code>config</code>
 - <code>role-requests</code> and <code>metrics</code>
-- <code>auth</code>
+- <code>authentication</code> and <code>session</code>
 - <code>roles</code>, <code>rule-versions</code>, and <code>catalog-publication</code>
-- <code>admin-dashboard</code>, <code>administrators</code>, <code>audit-logs</code>, and <code>settings</code>
+- <code>dashboard</code>, <code>audit-logs</code>, <code>account</code>, and <code>settings</code>
 
-Node.js API requirements:
+Do not create an administrators module, user-management module, role-authorization module, or public API module.
 
-- Validate access tokens, active administrator status, and roles for every protected route. Do not trust role claims without checking the current administrator record when authorization is sensitive.
-- Use parameterized SQL only. Use transaction boundaries for publication, role changes, settings changes, and audit events, and never use a superuser or <code>BYPASSRLS</code> database connection in request handlers.
-- Handle pre-authentication refresh-session lookup with a narrowly scoped query or database function that can inspect only a hash and session state; never disable RLS broadly to implement login or refresh.
-- Hash administrator passwords with Argon2id. Generate short-lived access tokens, rotate refresh tokens, store only refresh-token hashes, and revoke sessions on logout or administrator deactivation.
+### Authentication and authorization requirements
+
+- Accept a username and password only on <code>POST /app/admin/login</code>.
+- Compare the submitted password with the Argon2id hash for the singleton <code>admin_account</code> row.
+- On success, create a cryptographically random server-side session and send it only as a Secure, HttpOnly, SameSite cookie.
+- Store only a one-way session hash in <code>admin_sessions</code>.
+- Check the session record and active singleton account on every protected request.
+- Set transaction-local PostgreSQL administrator context only after the session is validated.
+- Rotate the session identifier after login and after credential changes.
+- Revoke the current session on logout and all sessions on username/password change.
+- Enforce an absolute session lifetime and idle timeout.
+- Use CSRF protection and strict Origin/Referer validation for state-changing cookie-authenticated routes.
+- Do not issue or accept JWTs, bearer access tokens, refresh tokens, personal access tokens, bootstrap tokens, magic links, or token-login credentials.
+- Do not implement administrator roles or role claims. A valid current session is the only administrator authorization level.
+- Do not implement registration, invitations, password reset, email verification, or a second administrator.
+- Rate-limit failed logins by client network address and normalized username without logging raw credentials.
+- Treat the default credentials as initialization input only; do not return them from a route or store them in the Flutter app.
+
+The account update route must:
+
+- Require the current password.
+- Accept an optional new username and optional new password.
+- Reject a request that changes neither.
+- Validate username syntax and password strength.
+- Update the singleton row in one transaction.
+- Revoke all administrator sessions.
+- Record only a redacted audit event.
+- Return a response that tells the browser to show the login screen again, never a password or session value.
+
+### General Node.js requirements
+
+- Validate every request with explicit schemas and reject unknown fields.
+- Use parameterized SQL only.
+- Use transaction boundaries for publication, role changes, settings changes, credential changes, and audit events.
+- Never use a superuser or <code>BYPASSRLS</code> database connection in request handlers.
 - Never accept a PDF, extracted text, document name, score, recommendation, or trajectory.
-- Accept JSON only for defined routes. Reject multipart, octet-stream, unknown fields, file-like fields, and request bodies above a small documented limit (for example, 128 KiB).
-- Do not log request bodies containing free text, raw tokens, authorization headers, email addresses, or database errors.
+- Accept JSON only for defined routes. Reject multipart, octet-stream, unknown file-like fields, and request bodies above a small documented limit, for example 128 KiB.
+- Do not log request bodies containing free text, raw passwords, session cookies, authorization headers, email addresses, or database errors.
 - Rate-limit public role requests and metric events.
-- Rate-limit failed administrator logins with a shared or PostgreSQL-backed limiter so limits remain effective across API instances.
 - Normalize and length-limit public free-text fields.
 - Avoid returning internal database details.
 - Return typed JSON error envelopes with safe correlation IDs.
+- Provide only the health routes <code>/health/live</code> and <code>/health/ready</code> for deployment checks; health responses must not reveal secrets or database internals.
+- Do not expose an OpenAPI document or public route index.
 
-Keep these values server-side and document them in <code>.env.example</code>: <code>DATABASE_URL</code>, <code>JWT_ACCESS_SECRET</code>, <code>REFRESH_TOKEN_PEPPER</code>, <code>ADMIN_BOOTSTRAP_TOKEN</code> where needed for one-time setup, CORS allowlists, rate-limit settings, and CAPTCHA verification secrets. A public API base URL may be compiled into Flutter; no database or signing secret may be.
+Keep these values server-side and document them in <code>.env.example</code>:
 
-Provide working API commands similar to:
+- <code>DATABASE_URL</code>
+- <code>SESSION_HASH_PEPPER</code>
+- <code>PUBLIC_ORIGIN=https://cv.uxi.asia</code>
+- <code>ADMIN_INITIAL_USERNAME</code>
+- <code>ADMIN_INITIAL_PASSWORD</code>
+- session lifetime, idle timeout, cookie name, and rate-limit settings
+- optional CAPTCHA verification secrets
+
+The initial seed defaults are <code>ADMIN_INITIAL_USERNAME=rameshwx</code> and <code>ADMIN_INITIAL_PASSWORD=rameshwx</code> when the database is empty and no override is supplied. These values are never sent to the client. The seed must be idempotent and must never overwrite an existing username, password hash, or credential-change state.
+
+Provide working commands similar to:
 
 ~~~bash
 npm --prefix api ci
@@ -847,7 +968,7 @@ npm --prefix api run dev
 npm --prefix api test
 ~~~
 
-The migration and seed commands must target an explicitly configured PostgreSQL instance and must never run against production accidentally. Document how to create the private first administrator with the API bootstrap CLI.
+The migration and seed commands must target an explicitly configured PostgreSQL instance and must never run against production accidentally. Document the first-login flow and the admin-panel credential-change flow. Do not require an API token to bootstrap the administrator.
 
 Example error envelope:
 
@@ -872,30 +993,35 @@ Implement privacy as code, not only as a written promise.
 
 - Keep PDF bytes and extracted text in scoped in-memory objects.
 - Do not put CV data in URLs, query strings, fragments, cookies, local storage, IndexedDB, service-worker cache, analytics payloads, error reports, or third-party requests.
+- The administrator session cookie is HttpOnly and contains only a server-generated session identifier; it must never contain CV data.
 - Use redacted logs only. In production, do not log document metadata that can identify the visitor's file.
 - Clear buffers, parsed pages, trajectory, and result state when a scan is reset.
 - Disable or isolate ads on scan and result routes.
-- Do not send the PDF to the Node.js API even when catalog fetching fails.
+- Do not send the PDF to the Node.js application even when catalog fetching fails.
 
 ### Server privacy
 
-- Do not define CV-related database tables or endpoints.
-- Reject unexpected file uploads at the reverse proxy and Node.js API layers.
-- Redact secrets, tokens, authorization headers, request bodies, email addresses where possible, and all CV-like content from logs.
-- Use CSP, HTTPS, secure headers, strict CORS, and appropriate frame/referrer policies.
-- Keep PostgreSQL internal to the Docker network.
-- Store production secrets only in protected GitHub Actions or VPS configuration.
+- Do not define CV-related database tables or routes.
+- Reject unexpected file uploads at the Coolify proxy and Node.js application layers.
+- Redact secrets, passwords, session cookies, authorization headers, request bodies, email addresses where possible, and all CV-like content from logs.
+- Use CSP, HTTPS, secure headers, strict same-origin handling, and appropriate frame/referrer policies.
+- Keep PostgreSQL private to the Coolify project network.
+- Store production secrets only in Coolify/GitHub secret configuration.
+- Use a restrictive Content Security Policy that permits only the application assets, PDF.js local assets, and explicitly approved donation/ad origins outside scan and result routes.
 
 ### Privacy tests
 
 Add automated tests that:
 
 - Intercept browser network calls during a scan.
-- Assert that no request body, URL, header, or third-party request contains known synthetic CV markers.
+- Assert that no request body, URL, header, cookie, or third-party request contains known synthetic CV markers.
 - Assert that no file upload request occurs.
 - Assert that reset clears the in-memory result and trajectory.
-- Search source code and Node.js API route definitions for forbidden CV endpoint names.
+- Search source code and Node.js route definitions for forbidden CV endpoint names.
 - Verify no database migration creates CV storage or visitor result tables.
+- Verify that the administrator account and session tables contain no CV or visitor-result fields.
+- Verify that the credential-change audit event contains no password, password hash, username value, or session value.
+
 
 ## Design and accessibility
 
@@ -905,6 +1031,7 @@ Shared design system requirements:
 
 - Responsive layouts for phone, tablet, and desktop widths.
 - Consistent colors, typography, spacing, cards, buttons, input fields, badges, tables, dialogs, and error states.
+- Consistent Ready My CV branding in the single public and administrator experience.
 - Visible progress and cancellation states.
 - Strong visual distinction between strong evidence, weak evidence, mention-only evidence, missing evidence, and contradictory evidence.
 - Do not use color alone to communicate a classification.
@@ -913,6 +1040,7 @@ Shared design system requirements:
 - Screen-reader-friendly result summaries.
 - WCAG 2.1 AA intent for contrast, touch targets, focus order, and understandable errors.
 - No deceptive “guaranteed interview” or “official ATS” language.
+- Do not display the default administrator password anywhere except the protected setup documentation and first-run operational instructions.
 
 ## Evaluation harness
 
@@ -1015,22 +1143,29 @@ For each stage, record the hypothesis, changed code/rules, metrics, representati
 ### Dart and Flutter
 
 - <code>dart format --set-exit-if-changed</code>.
-- <code>flutter analyze</code> for both applications.
+- <code>flutter analyze</code> for the single web application.
 - Unit tests for all domain models, normalizers, matchers, scoring, recommendations, verification, and failures.
-- Widget tests for public and admin screens.
-- Browser integration tests for PDF selection, scan states, results, reset, routing, and accessibility.
+- Widget tests for public and administrator screens.
+- Browser integration tests for PDF selection, scan states, results, reset, routing, credential login, credential change, and accessibility.
 - Golden tests for important responsive states where stable.
 - Test cancellation and duplicate-action prevention.
+- Test that Flutter uses same-origin relative routes and never attempts a direct PostgreSQL connection.
 
-### PostgreSQL and Node.js API
+### PostgreSQL and Node.js application
 
 - Migration and seed checks.
+- Singleton administrator constraint tests proving a second account cannot be inserted.
+- Default seed test proving the first empty database initializes username <code>rameshwx</code> and password <code>rameshwx</code> without storing plaintext.
+- Normal username/password login tests.
+- Invalid-credential and login-rate-limit tests.
+- Secure session-cookie, session-expiry, logout, and revocation tests.
+- Credential-change tests for username only, password only, both together, current-password failure, atomicity, and all-session revocation.
 - RLS policy tests.
-- Application authentication and role authorization tests.
+- Application session authorization tests.
 - Catalog validation and publication transaction tests.
 - Immutable snapshot tests.
 - Role-request validation/rate-limit tests.
-- Audit-log tests.
+- Audit-log tests proving secrets and CV data are excluded.
 - Node.js/TypeScript unit and integration tests against an ephemeral PostgreSQL database.
 
 ### Privacy and security
@@ -1041,6 +1176,8 @@ For each stage, record the hypothesis, changed code/rules, metrics, representati
 - CSP and security-header verification.
 - Admin route guard tests.
 - Database credential and server-secret exclusion tests.
+- Tests proving there is no JWT, bearer-token, refresh-token, bootstrap-token, administrator-registration, or public-API implementation.
+- Tests proving only one root <code>Dockerfile</code> is used for the application.
 
 ### End-to-end
 
@@ -1050,43 +1187,116 @@ Cover:
 2. Strong/weak/mention-only/missing/contradictory evidence rendering.
 3. Invalid and unsupported PDF errors.
 4. Role request submission without attachment.
-5. Admin login and logout.
-6. Draft rule editing and validation.
-7. Catalog publication and public catalog refresh.
-8. Role-request triage.
-9. Aggregate dashboard without visitor-level data.
+5. Administrator login at <code>/admin</code> with username <code>rameshwx</code> and password <code>rameshwx</code> on a newly initialized database.
+6. Forced first-login credential change.
+7. Username/password change from <code>/admin/account</code> and revocation of prior sessions.
+8. Draft rule editing and validation.
+9. Catalog publication and public catalog refresh through the same-origin application route.
+10. Role-request triage.
+11. Aggregate dashboard without visitor-level data.
 
-## Docker and VPS deployment
 
-Create production-ready Dockerfiles and Compose configuration.
+## Docker and Coolify deployment
 
-Required services:
+Deploy the complete product as one Coolify project for the domain <code>cv.uxi.asia</code>.
 
-- Public Flutter Web static server.
-- Admin Flutter Web static server.
-- Node.js API service.
-- PostgreSQL database service.
-- Reverse proxy with HTTPS routing.
-- Uptime/health integration.
+### Coolify topology
 
-PostgreSQL requirements:
+The Coolify project must contain:
 
-- Use the official PostgreSQL image for the selected PostgreSQL version and run the checked-in SQL migrations through the Node.js migration command.
-- Do not expose PostgreSQL port <code>5432</code> publicly.
-- Use internal Docker networks.
-- Persist only PostgreSQL application data and configuration that is explicitly required.
-- Run the API and migration job as non-root containers with separate least-privilege database roles where practical.
+1. One application resource built from the repository root <code>Dockerfile</code>.
+2. One PostgreSQL resource attached to the same Coolify project/network.
+3. One custom domain: <code>cv.uxi.asia</code>.
+4. Coolify-managed HTTPS and reverse-proxy routing to the application resource.
+
+The root Dockerfile is the only application Dockerfile. It must use a multi-stage build to:
+
+- Resolve and build the single Flutter Web application.
+- Install and compile the Node.js/TypeScript application.
+- Copy the compiled Flutter assets into the Node.js runtime image.
+- Run one Node.js process that serves the Flutter assets, same-origin application routes, and health routes.
+- Run as a non-root user.
+- Exclude source maps, tests, development tools, secrets, local PDFs, and environment files from the runtime image unless explicitly required for a safe production diagnostic.
+
+Do not create separate public-web, administrator-web, API, Nginx, Caddy, reverse-proxy, migration, or frontend Dockerfiles. Do not create Docker Compose files for production or local development. Do not create separate public, admin, or API containers.
+
+PostgreSQL is a persistent Coolify resource in the same project, not a process inside the application image. Do not embed PostgreSQL in the Dockerfile. This keeps the requested deployment to one Coolify project and one application Dockerfile while preserving database persistence, backups, upgrades, and least-privilege networking.
+
+### Required runtime behavior
+
+- Serve the public Flutter experience at <code>https://cv.uxi.asia/</code>.
+- Serve the administrator experience from the same Flutter bundle at <code>https://cv.uxi.asia/admin</code>.
+- Use Flutter base href <code>/</code> and SPA fallback so direct navigation to every supported route works.
+- Serve same-origin application routes from the Node.js process.
+- Do not expose a public API host, subdomain, port, API key, or cross-origin route.
+- Allow the Coolify proxy to forward only HTTPS traffic to the application container.
+- Keep PostgreSQL private to the Coolify project network and do not expose port <code>5432</code> publicly.
+- Configure request-size limits, JSON-only application routes, strict same-origin checks, security headers, CSP, compression, and safe health responses.
+- Reject multipart, file-upload, octet-stream, and CV-like request payloads at both the proxy configuration available in Coolify and the Node.js application.
+- Provide <code>/health/live</code> and <code>/health/ready</code>. The ready check may verify database connectivity but must not reveal connection strings, schema details, credentials, or query errors.
 - Do not mount any directory intended for CV uploads because no CV upload exists.
+- Configure PostgreSQL backups through Coolify or the approved VPS backup process. Backups must contain only application data intentionally persisted by the schema, never CV data.
 
-Frontend routing requirements:
+### Root Dockerfile expectations
 
-- Serve the public Flutter app at <code>/</code>.
-- Serve the administrator Flutter app at <code>/admin/</code> with the correct Flutter base href and SPA fallback.
-- Route <code>/api/</code> traffic to the Node.js API service; do not expose PostgreSQL to the browser.
-- Use HTTPS, compression, security headers, request-size limits, strict CORS, and a JSON-only API policy.
-- Configure the reverse proxy and API to reject multipart and file-upload requests and to return safe health responses from <code>/health/live</code> and <code>/health/ready</code>.
+Use a reproducible multi-stage Dockerfile similar in behavior to:
 
-Provide <code>.env.example</code> files with safe placeholder names, never real values. Document required production variables and where they belong.
+~~~text
+Flutter build stage
+  -> build the single apps/web Flutter Web bundle
+
+Node build stage
+  -> install api dependencies
+  -> compile api TypeScript
+  -> copy only production dependencies and compiled files
+
+Runtime stage
+  -> copy Flutter build/web into the Node.js static asset directory
+  -> copy Node.js production output
+  -> expose only the internal application port
+  -> run the Node.js server
+~~~
+
+Choose mutually compatible base-image versions and record them in the reproduction guide. Pin major versions and preferably immutable image digests where operationally practical. Do not place <code>ADMIN_INITIAL_PASSWORD</code>, <code>DATABASE_URL</code>, <code>SESSION_HASH_PEPPER</code>, or any other secret in the image.
+
+### Environment configuration
+
+Provide a root <code>.env.example</code> and document the following production variables in Coolify:
+
+- <code>NODE_ENV</code>
+- <code>PORT</code>
+- <code>DATABASE_URL</code>
+- <code>SESSION_HASH_PEPPER</code>
+- <code>PUBLIC_ORIGIN=https://cv.uxi.asia</code>
+- <code>ADMIN_INITIAL_USERNAME</code>
+- <code>ADMIN_INITIAL_PASSWORD</code>
+- administrator session lifetime and idle timeout
+- cookie name and secure-cookie flags
+- rate-limit settings
+- optional CAPTCHA verification secret
+
+The default first initialization values are <code>rameshwx</code>/<code>rameshwx</code>. Treat them as sensitive even though they are specified by this product requirement. Never commit them as a password hash or expose them in the browser. After the first login, change them from <code>/admin/account</code>.
+
+### Database migration and release process
+
+- Run checked-in PostgreSQL migrations with a Coolify pre-deploy/release command using the same image, or an equivalent one-time command supported by the single Coolify application resource.
+- Run migrations before the new application version receives traffic.
+- Run the idempotent seed only when initializing an empty database.
+- Do not run seed logic on every request or overwrite the changed administrator credentials.
+- Keep the previous application version available for rollback.
+- Verify <code>/health/live</code>, <code>/health/ready</code>, <code>/</code>, <code>/admin</code>, and the catalog route after deployment.
+- Verify that PostgreSQL remains private and that only one Coolify application resource is deployed.
+
+### Domain and DNS
+
+Configure:
+
+- DNS record for <code>cv.uxi.asia</code> to the VPS/Coolify endpoint in Cloudflare.
+- Coolify custom domain <code>cv.uxi.asia</code>.
+- Automatic HTTPS certificate and redirect from HTTP to HTTPS.
+- No separate <code>admin.cv.uxi.asia</code>, <code>api.cv.uxi.asia</code>, or public API hostname.
+- Canonical links and security policies for <code>https://cv.uxi.asia</code>.
+
 
 ## GitHub Actions CI/CD
 
@@ -1095,50 +1305,50 @@ Provide <code>.env.example</code> files with safe placeholder names, never real 
 Run:
 
 - Formatting checks.
-- Flutter analysis.
+- Flutter analysis for the single web application.
 - Dart unit tests.
 - Flutter widget/integration tests where available.
 - Node.js lint, type checks, and unit/integration tests.
 - PostgreSQL migration and seed checks against an ephemeral database.
-- RLS policy and API authorization tests.
+- Singleton administrator, session-cookie, credential-change, RLS, and application authorization tests.
 - Privacy/static forbidden-route checks.
 - Evaluation baseline/final tests.
 - Dependency and secret scans.
+- Dockerfile build validation.
 
 ### Build workflow
 
 On merge to <code>main</code>:
 
 1. Run the complete test suite.
-2. Build the public Flutter Web application.
-3. Build the admin Flutter Web application.
-4. Build the Node.js API and its Docker image.
-5. Build the public and admin Docker images.
-6. Tag each image with the Git commit SHA.
-7. Push images to GHCR.
-8. Publish release metadata.
+2. Build the single Flutter Web application.
+3. Build the Node.js/TypeScript application.
+4. Build one production image from the repository root <code>Dockerfile</code>.
+5. Tag the image with the Git commit SHA.
+6. Push the image to GHCR.
+7. Publish release metadata containing the image tag and migration version.
 
-Suggested image names:
+Suggested image name:
 
 ~~~text
-ghcr.io/rameshwx/cv-role-readiness-public-web:<commit-sha>
-ghcr.io/rameshwx/cv-role-readiness-admin-web:<commit-sha>
-ghcr.io/rameshwx/cv-role-readiness-api:<commit-sha>
+ghcr.io/rameshwx/cv-role-readiness:<commit-sha>
 ~~~
+
+Do not build or publish separate public-web, administrator-web, API, or proxy images.
 
 ### Deployment workflow
 
 On an approved merge or manual dispatch:
 
-1. Connect to the VPS using protected GitHub secrets or an approved Coolify webhook.
-2. Pull the exact commit-SHA image tags.
-3. Run the API migration job against the internal PostgreSQL service and apply checked-in migrations safely.
-4. Restart or roll out the Node.js API and only changed frontend services.
-5. Run public, admin, API, HTTPS, database, and privacy health checks.
+1. Connect to the single Coolify project using a protected Coolify webhook or approved deployment integration.
+2. Deploy the exact commit-SHA image, or ask Coolify to build that exact commit with the root <code>Dockerfile</code>.
+3. Apply checked-in PostgreSQL migrations through the configured release command before serving the new version.
+4. Keep the Coolify PostgreSQL resource attached to the same project and private network.
+5. Run public page, administrator route, login/session, catalog, health, HTTPS, database-privacy, and no-upload smoke checks.
 6. Preserve the previous deployment if verification fails.
-7. Record deployed commit, image tags, catalog version, migration status, and backup status.
+7. Record the deployed commit, single image tag, migration status, catalog version, and backup status.
 
-Never deploy only a mutable <code>latest</code> tag. Never print secrets in workflow logs.
+Never deploy only a mutable <code>latest</code> tag. Never print passwords, session values, database URLs, or other secrets in workflow logs. The deployment must remain one Coolify project with one application resource and one PostgreSQL resource.
 
 Required workflow files:
 
@@ -1153,32 +1363,45 @@ Required workflow files:
 Create a README that includes:
 
 - Product purpose and intended user.
+- Ready My CV branding and production URLs.
 - The privacy promise and its technical enforcement.
 - Why the system is agentic without an LLM.
 - Architecture diagram.
 - Repository structure.
 - Local setup.
-- PostgreSQL and Node.js API setup, migrations, and seed data.
-- Admin bootstrap instructions.
-- Public and admin development commands.
+- PostgreSQL and Node.js application setup, migrations, seed data, and health checks.
+- The single-admin default initialization and first-login credential-change flow.
+- The fact that the administrator logs in with username <code>rameshwx</code> and password <code>rameshwx</code> on a newly initialized database.
+- How to change the username and password from <code>/admin/account</code>.
+- How server-side session cookies work and why no JWT/bearer/refresh/bootstrap token is used.
+- Public-facing application routes versus internal same-origin routes.
+- The explicit statement that no public or third-party API is provided.
+- Local development commands.
 - Test commands.
 - Evaluation commands and interpretation.
-- Docker/VPS deployment.
+- The root Dockerfile build and runtime model.
+- One Coolify project deployment at <code>cv.uxi.asia</code>.
+- PostgreSQL backups, rollback, and migration guidance.
 - GitHub Actions secrets.
-- Rollback and backup guidance.
 - Limitations and future work.
 - Dependency licenses.
 
-Create a reproduction guide that starts from a clean environment and includes exact versions, commands, expected outputs, synthetic test-data locations, trajectory inspection, baseline comparison, and privacy verification steps. It must not require a private CV or private credentials.
+Create a reproduction guide that starts from a clean environment and includes exact versions, commands, expected outputs, synthetic test-data locations, trajectory inspection, baseline comparison, privacy verification steps, local PostgreSQL setup, first-run administrator initialization, and safe credential-change testing. It must not require a private CV or private production credentials.
 
 Create an architecture decision record explaining:
 
 - Why local deterministic processing was selected.
 - Why the product does not use an LLM.
-- Why Riverpod is used for state and DI.
-- Why PostgreSQL and a Node.js API are used as the backend.
+- Why one Flutter Web application is used for both public and administrator experiences.
+- Why PostgreSQL and a Node.js application are used as the backend.
+- Why the product has internal same-origin routes but no public API.
+- Why normal username/password authentication with a server-side session cookie is used.
+- Why there is exactly one administrator and no administrator roles.
+- Why the root Dockerfile and one Coolify project are used.
 - How privacy is enforced.
 - How the public catalog is versioned and published.
+- Why PostgreSQL is a separate persistent Coolify resource rather than a process in the application container.
+
 
 ## Delivery phases
 
@@ -1186,12 +1409,12 @@ Implement in this order, but continue through every phase in the same task unles
 
 ### Phase 1: Foundation
 
-- Create the Git repository and monorepo.
-- Configure Flutter apps and shared packages.
-- Add Clean Architecture, Riverpod DI, GoRouter, immutable models, linting, and formatting.
-- Add the Node.js API, PostgreSQL migrations, RLS, seed data, application-auth skeleton, and health endpoints.
-- Add Docker and environment templates.
-- Add CI checks and health endpoints.
+- Check or create the public GitHub repository and preserve unrelated existing work.
+- Create the monorepo and the single Flutter Web application.
+- Configure Clean Architecture, Riverpod DI, GoRouter, immutable models, linting, and formatting.
+- Add the Node.js application server, PostgreSQL migrations, RLS, singleton administrator schema, session-cookie authentication skeleton, seed data, and health endpoints.
+- Add the root Dockerfile, root environment template, and Coolify deployment documentation.
+- Add CI checks.
 
 ### Phase 2: Shared domain engine
 
@@ -1209,19 +1432,24 @@ Implement in this order, but continue through every phase in the same task unles
 - Implement trajectory capture and verification retry behavior.
 - Add deterministic repeat-run tests.
 
-### Phase 4: Public application
+### Phase 4: Public experience
 
-- Implement landing, scan, results, request, privacy, and terms routes.
+- Implement landing, scan, results, request, privacy, and terms routes in the single Flutter application.
 - Integrate local PDF.js.
-- Integrate catalog fetch without CV data.
+- Integrate catalog fetch without CV data through same-origin application routes.
 - Implement responsive accessible UI and privacy messaging.
 - Add PayPal/ad feature flags outside the scan flow.
 
-### Phase 5: Administrator application
+### Phase 5: Administrator experience
 
-- Implement Node.js API administrator login/logout, token refresh, revocation, and private bootstrap flow.
-- Implement route protection and role authorization.
-- Implement dashboard, catalog editor, validation, preview, publication, rollback, requests, audit logs, administrators, and settings.
+- Implement the <code>/admin</code> login form with username and password.
+- Initialize the singleton account with username <code>rameshwx</code> and password <code>rameshwx</code> on an empty database.
+- Implement server-side session-cookie login, logout, expiry, and revocation.
+- Implement the forced first-login credential-change flow.
+- Implement <code>/admin/account</code> so the administrator can change the username and password.
+- Implement route protection and session authorization.
+- Implement dashboard, catalog editor, validation, preview, publication, rollback, requests, audit logs, and settings.
+- Do not implement administrator management or administrator roles.
 
 ### Phase 6: Evaluation and evidence
 
@@ -1232,8 +1460,9 @@ Implement in this order, but continue through every phase in the same task unles
 
 ### Phase 7: Operations and release
 
-- Complete Docker Compose and reverse-proxy configuration.
-- Complete GitHub Actions build/deploy/rollback workflow.
+- Complete the single root Dockerfile and health behavior.
+- Configure one Coolify project with one application resource, one PostgreSQL resource, the domain <code>cv.uxi.asia</code>, and HTTPS.
+- Complete GitHub Actions build/deploy/rollback workflow for one image.
 - Run security, privacy, integration, and production smoke tests.
 - Complete README and clean-environment reproduction guide.
 - Push the public GitHub repository.
@@ -1243,8 +1472,8 @@ Implement in this order, but continue through every phase in the same task unles
 Do not finish until the following checklist is satisfied or an external blocker is explicitly documented:
 
 - [ ] Public GitHub repository exists at <code>https://github.com/rameshwx/cv-role-readiness</code> and is public.
-- [ ] Two separate Flutter Web applications build successfully.
-- [ ] Both applications use Clean Architecture, feature-first organization, Riverpod state/DI, immutable models, and GoRouter.
+- [ ] One Flutter Web application builds successfully and contains both public and administrator route areas.
+- [ ] The application uses Clean Architecture, feature-first organization, Riverpod state/DI, immutable models, and GoRouter.
 - [ ] Public visitor scanning works without registration or login.
 - [ ] Text-based PDFs are parsed locally by PDF.js.
 - [ ] Scanned, protected, corrupt, oversized, and wrong-format files fail safely without server fallback.
@@ -1252,21 +1481,30 @@ Do not finish until the following checklist is satisfied or an external blocker 
 - [ ] Evidence classifications and source references are visible and explainable.
 - [ ] Score calculation is deterministic, bounded, versioned, and independently tested.
 - [ ] Verification rejects unsupported or inconsistent results before display.
-- [ ] No CV data or visitor result data reaches the Node.js API, PostgreSQL, server logs, storage, analytics, PayPal, ads, URLs, or browser persistence.
+- [ ] No CV data or visitor result data reaches the Node.js application, PostgreSQL, server logs, storage, analytics, PayPal, ads, URLs, or browser persistence.
 - [ ] No forbidden CV endpoint or database table exists.
-- [ ] Public catalog is versioned in PostgreSQL and fetched from a published snapshot through the Node.js API.
-- [ ] Admin login works at <code>/admin</code>.
-- [ ] Node.js API authorization and PostgreSQL RLS protect drafts, publication, requests, settings, metrics, and audit logs.
-- [ ] Administrators can edit, validate, preview, publish, and audit catalog versions.
+- [ ] The public catalog is versioned in PostgreSQL and fetched through an internal same-origin application route.
+- [ ] No public or third-party API, API key, CORS API, API host, or public API documentation exists.
+- [ ] A newly initialized database creates exactly one administrator account with username <code>rameshwx</code> and password <code>rameshwx</code>, with only an Argon2id hash stored.
+- [ ] Administrator login works at <code>https://cv.uxi.asia/admin</code> using the username/password form.
+- [ ] No JWT, bearer access token, refresh token, bootstrap token, magic-link login, or token-based administrator login exists.
+- [ ] Administrator authentication uses a Secure, HttpOnly, SameSite server-side session cookie.
+- [ ] The administrator can change the username and password from <code>/admin/account</code>.
+- [ ] Username/password changes are atomic, audited without secrets, and revoke active sessions.
+- [ ] No administrator registration, administrator CRUD, administrator list, multi-tenant identity, or administrator roles exist.
+- [ ] Node.js session authorization and PostgreSQL RLS protect drafts, publication, requests, settings, metrics, audit logs, and account/session records.
 - [ ] Public role requests work without attachments.
 - [ ] Optional donation and ad controls do not affect access or scoring.
 - [ ] At least 20 synthetic benchmark cases exist with gold labels.
 - [ ] Baseline and final agent metrics and trajectories are generated.
 - [ ] Improvement changelog contains measured decisions, including one removed experiment.
-- [ ] Unit, widget, integration, privacy, security, migration, and evaluation tests pass.
-- [ ] Docker images build reproducibly with commit-SHA tags.
-- [ ] GitHub Actions run CI and have a protected deployment workflow.
-- [ ] VPS deployment configuration includes HTTPS, internal database networking, health checks, backups, and rollback guidance.
+- [ ] Unit, widget, integration, privacy, security, migration, authentication, and evaluation tests pass.
+- [ ] One root <code>Dockerfile</code> builds the Flutter bundle and Node.js application into one deployable application image.
+- [ ] No separate frontend, API, proxy, or migration Dockerfiles and no Docker Compose deployment are required.
+- [ ] One Coolify project contains the application and its PostgreSQL resource.
+- [ ] The application is configured for <code>https://cv.uxi.asia</code> and <code>https://cv.uxi.asia/admin</code> with HTTPS.
+- [ ] GitHub Actions build and deploy the single commit-SHA image.
+- [ ] PostgreSQL is private, backed up, migration-safe, and covered by rollback guidance.
 - [ ] README and clean-environment reproduction guide are complete.
 
 ## Final response required from the implementing agent
@@ -1275,13 +1513,15 @@ When the implementation is complete, provide:
 
 1. Repository URL and confirmed visibility.
 2. Commit SHA pushed to the default branch.
-3. Public and administrator URLs, if deployed.
+3. Production URL <code>https://cv.uxi.asia</code> and administrator URL <code>https://cv.uxi.asia/admin</code>, if deployed.
 4. Local setup commands.
 5. Test commands and results.
 6. Evaluation commands and summary metrics.
-7. PostgreSQL migration and Node.js API status.
-8. Docker/VPS deployment status.
-9. Any remaining manual configuration or external blocker.
-10. A short privacy verification summary proving that the CV never leaves the browser.
+7. PostgreSQL migration and Node.js application status.
+8. Root Dockerfile build and one-Coolify-project deployment status.
+9. Confirmation that the normal administrator login uses username/password, the initial credentials are <code>rameshwx</code>/<code>rameshwx</code>, and credentials can be changed in <code>/admin/account</code>.
+10. Confirmation that no public or third-party API and no token-based administrator login were implemented.
+11. Any remaining manual configuration or external blocker.
+12. A short privacy verification summary proving that the CV never leaves the browser.
 
 Be precise. Separate verified results from pending manual actions.
