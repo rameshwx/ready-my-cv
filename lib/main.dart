@@ -215,7 +215,7 @@ class _ScanPageState extends ConsumerState<ScanPage> {
               const SizedBox(height: 20),
               catalog.when(
                 data: (c) => DropdownButtonFormField<JobRole>(
-                  initialValue: role,
+                  value: role,
                   decoration: const InputDecoration(
                     labelText: 'Target role',
                     border: OutlineInputBorder(),
