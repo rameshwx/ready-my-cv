@@ -1,0 +1,20 @@
+name: agent_engine
+description: Typed deterministic seven-agent workflow.
+publish_to: none
+version: 1.0.0
+resolution: workspace
+environment:
+  sdk: ^3.8.1
+dependencies:
+  catalog_models:
+    path: ../catalog_models
+  core_models:
+    path: ../core_models
+  pdf_parser_contract:
+    path: ../pdf_parser_contract
+  scoring_engine:
+    path: ../scoring_engine
+  validation:
+    path: ../validation
+dev_dependencies:
+  test: ^1.25.15

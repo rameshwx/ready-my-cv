@@ -2,101 +2,209 @@
   {
     "id": "android-strong",
     "score": 100,
-    "method": "exact-keyword-baseline"
+    "matchedRuleIds": [
+      "android-developer-1",
+      "android-developer-2",
+      "android-developer-3",
+      "android-developer-4",
+      "android-developer-5"
+    ],
+    "method": "exact-normalized-term-baseline"
   },
   {
     "id": "android-keywords",
-    "score": 90,
-    "method": "exact-keyword-baseline"
+    "score": 100,
+    "matchedRuleIds": [
+      "android-developer-1",
+      "android-developer-2",
+      "android-developer-3",
+      "android-developer-4",
+      "android-developer-5"
+    ],
+    "method": "exact-normalized-term-baseline"
   },
   {
     "id": "android-alias",
-    "score": 40,
-    "method": "exact-keyword-baseline"
+    "score": 0,
+    "matchedRuleIds": [],
+    "method": "exact-normalized-term-baseline"
   },
   {
     "id": "flutter-strong",
-    "score": 80,
-    "method": "exact-keyword-baseline"
+    "score": 100,
+    "matchedRuleIds": [
+      "flutter-developer-1",
+      "flutter-developer-2",
+      "flutter-developer-3",
+      "flutter-developer-4",
+      "flutter-developer-5"
+    ],
+    "method": "exact-normalized-term-baseline"
   },
   {
     "id": "flutter-weak",
-    "score": 60,
-    "method": "exact-keyword-baseline"
+    "score": 85,
+    "matchedRuleIds": [
+      "flutter-developer-1",
+      "flutter-developer-2",
+      "flutter-developer-3",
+      "flutter-developer-5"
+    ],
+    "method": "exact-normalized-term-baseline"
   },
   {
     "id": "flutter-missing",
-    "score": 30,
-    "method": "exact-keyword-baseline"
+    "score": 0,
+    "matchedRuleIds": [],
+    "method": "exact-normalized-term-baseline"
   },
   {
     "id": "kmp-strong",
-    "score": 80,
-    "method": "exact-keyword-baseline"
+    "score": 77,
+    "matchedRuleIds": [
+      "kotlin-multiplatform-developer-1",
+      "kotlin-multiplatform-developer-3",
+      "kotlin-multiplatform-developer-4",
+      "kotlin-multiplatform-developer-5"
+    ],
+    "method": "exact-normalized-term-baseline"
   },
   {
     "id": "kmp-alias",
-    "score": 30,
-    "method": "exact-keyword-baseline"
+    "score": 0,
+    "matchedRuleIds": [],
+    "method": "exact-normalized-term-baseline"
   },
   {
     "id": "ios-strong",
-    "score": 80,
-    "method": "exact-keyword-baseline"
+    "score": 100,
+    "matchedRuleIds": [
+      "ios-developer-1",
+      "ios-developer-2",
+      "ios-developer-3",
+      "ios-developer-4",
+      "ios-developer-5"
+    ],
+    "method": "exact-normalized-term-baseline"
   },
   {
     "id": "ios-list",
-    "score": 70,
-    "method": "exact-keyword-baseline"
+    "score": 100,
+    "matchedRuleIds": [
+      "ios-developer-1",
+      "ios-developer-2",
+      "ios-developer-3",
+      "ios-developer-4",
+      "ios-developer-5"
+    ],
+    "method": "exact-normalized-term-baseline"
   },
   {
     "id": "frontend-strong",
-    "score": 70,
-    "method": "exact-keyword-baseline"
+    "score": 100,
+    "matchedRuleIds": [
+      "frontend-developer-1",
+      "frontend-developer-2",
+      "frontend-developer-3",
+      "frontend-developer-4",
+      "frontend-developer-5"
+    ],
+    "method": "exact-normalized-term-baseline"
   },
   {
     "id": "frontend-partial",
-    "score": 10,
-    "method": "exact-keyword-baseline"
+    "score": 0,
+    "matchedRuleIds": [],
+    "method": "exact-normalized-term-baseline"
   },
   {
     "id": "backend-strong",
-    "score": 80,
-    "method": "exact-keyword-baseline"
+    "score": 100,
+    "matchedRuleIds": [
+      "backend-developer-1",
+      "backend-developer-2",
+      "backend-developer-3",
+      "backend-developer-4",
+      "backend-developer-5"
+    ],
+    "method": "exact-normalized-term-baseline"
   },
   {
     "id": "backend-alias",
-    "score": 40,
-    "method": "exact-keyword-baseline"
+    "score": 0,
+    "matchedRuleIds": [],
+    "method": "exact-normalized-term-baseline"
   },
   {
     "id": "fullstack-strong",
-    "score": 70,
-    "method": "exact-keyword-baseline"
+    "score": 100,
+    "matchedRuleIds": [
+      "full-stack-developer-1",
+      "full-stack-developer-2",
+      "full-stack-developer-3",
+      "full-stack-developer-4",
+      "full-stack-developer-5"
+    ],
+    "method": "exact-normalized-term-baseline"
   },
   {
     "id": "qa-strong",
-    "score": 40,
-    "method": "exact-keyword-baseline"
+    "score": 100,
+    "matchedRuleIds": [
+      "qa-engineer-1",
+      "qa-engineer-2",
+      "qa-engineer-3",
+      "qa-engineer-4",
+      "qa-engineer-5"
+    ],
+    "method": "exact-normalized-term-baseline"
   },
   {
     "id": "devops-strong",
-    "score": 50,
-    "method": "exact-keyword-baseline"
+    "score": 100,
+    "matchedRuleIds": [
+      "devops-engineer-1",
+      "devops-engineer-2",
+      "devops-engineer-3",
+      "devops-engineer-4",
+      "devops-engineer-5"
+    ],
+    "method": "exact-normalized-term-baseline"
   },
   {
     "id": "design-strong",
-    "score": 30,
-    "method": "exact-keyword-baseline"
+    "score": 100,
+    "matchedRuleIds": [
+      "ui-ux-designer-1",
+      "ui-ux-designer-2",
+      "ui-ux-designer-3",
+      "ui-ux-designer-4",
+      "ui-ux-designer-5"
+    ],
+    "method": "exact-normalized-term-baseline"
   },
   {
     "id": "pm-strong",
-    "score": 30,
-    "method": "exact-keyword-baseline"
+    "score": 100,
+    "matchedRuleIds": [
+      "project-manager-1",
+      "project-manager-2",
+      "project-manager-3",
+      "project-manager-4",
+      "project-manager-5"
+    ],
+    "method": "exact-normalized-term-baseline"
   },
   {
     "id": "stuffing-hard",
     "score": 100,
-    "method": "exact-keyword-baseline"
+    "matchedRuleIds": [
+      "flutter-developer-1",
+      "flutter-developer-2",
+      "flutter-developer-3",
+      "flutter-developer-4",
+      "flutter-developer-5"
+    ],
+    "method": "exact-normalized-term-baseline"
   }
 ]

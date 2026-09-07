@@ -1,8 +1,39 @@
 {
   "cases": 20,
+  "requirementCount": 100,
+  "classificationMacroF1": 0.8,
+  "perClass": {
+    "strong": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "weak": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "mention_only": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "missing": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "contradictory": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+    }
+  },
+  "falsePositiveStrongMatches": 0,
+  "evidenceTraceabilityRate": 1.0,
   "repeatRunConsistency": 1.0,
-  "evidenceTraceability": 1.0,
-  "failedCases": 0,
+  "runtimeMsAverage": 2.25,
   "costPerCaseUsd": 0,
-  "note": "Synthetic gold-labelled evaluation; rerun after every rule change."
+  "failedCases": 0,
+  "baselineCases": 20
 }

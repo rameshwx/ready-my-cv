@@ -9,17 +9,35 @@ jobs:
         env: {POSTGRES_PASSWORD: postgres, POSTGRES_DB: ready_my_cv}
         ports: ['5432:5432']
         options: --health-cmd "pg_isready" --health-interval 10s --health-timeout 5s --health-retries 5
-    env: {DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/ready_my_cv', SESSION_HASH_PEPPER: 'ci-only-pepper-value-at-least-32-characters'}
+    env:
+      DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/ready_my_cv'
+      SESSION_HASH_PEPPER: 'ci-only-pepper-value-at-least-32-characters'
+      ADMIN_INITIAL_PASSWORD: 'ci-only-initial-password'
+      PUBLIC_ORIGIN: 'http://localhost:8080'
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
         with: {flutter-version: '3.32.0', channel: stable, cache: true}
       - uses: actions/setup-node@v4
         with: {node-version: '22', cache: npm, cache-dependency-path: api/package-lock.json}
-      - run: flutter pub get
-      - run: dart format --output=none --set-exit-if-changed lib test evaluation
-      - run: flutter analyze && flutter test
-      - run: npm ci && npm run typecheck && npm test && npm run db:migrate && npm run db:seed
+      - run: dart pub get
+      - run: dart run build_runner build --delete-conflicting-outputs
+        working-directory: packages/core_models
+      - run: dart run build_runner build --delete-conflicting-outputs
+        working-directory: packages/catalog_models
+      - run: dart run build_runner build --delete-conflicting-outputs
+        working-directory: packages/pdf_parser_contract
+      - run: dart run build_runner build --delete-conflicting-outputs
+        working-directory: apps/web
+      - run: dart format --output=none --set-exit-if-changed apps/web packages evaluation/bin
+      - run: flutter analyze
+        working-directory: apps/web
+      - run: flutter test
+        working-directory: apps/web
+      - run: flutter test --platform chrome
+        working-directory: apps/web
+      - run: npm ci && npm run typecheck && npm run build && npm test && npm run db:migrate && npm run db:seed
         working-directory: api
       - run: dart run evaluation/bin/run_baseline.dart && dart run evaluation/bin/run_agents.dart && dart run evaluation/bin/compare_results.dart
-      - run: '! rg -i "(/upload-cv|/score-cv|jsonwebtoken|bearer token)" api/src api/migrations'
+      - run: '! rg -i "(/upload-cv|/parse-cv|/extract-pdf|/score-cv|/save-result|jsonwebtoken|bearer token|refresh token|multipart|cors)" api/src api/migrations apps/web/lib'
+      - run: docker build --tag ready-my-cv:ci .

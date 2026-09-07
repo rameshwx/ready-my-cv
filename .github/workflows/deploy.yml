@@ -1,8 +1,16 @@
 name: Prepare Coolify deployment
-on: {workflow_dispatch: {}}
+on:
+  workflow_dispatch:
+    inputs:
+      image_sha:
+        description: Commit SHA tag already built in GHCR
+        required: true
+        type: string
 jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - name: Deployment handoff
-        run: echo "Deploy the GHCR image tagged with the selected commit SHA after approving the Coolify target."
+      - name: Record manual deployment boundary
+        run: |
+          echo "GHCR image: ghcr.io/rameshwx/ready-my-cv:${{ inputs.image_sha }}"
+          echo "Manual action required: approve the exact Coolify target and verify /health/ready, /, /admin, headers, assets, and private PostgreSQL bindings."

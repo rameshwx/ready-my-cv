@@ -1,0 +1,11 @@
+name: design_system
+description: Shared Ready My CV Material 3 design system.
+publish_to: none
+version: 1.0.0
+resolution: workspace
+environment:
+  sdk: ^3.8.1
+  flutter: '>=3.32.0'
+dependencies:
+  flutter:
+    sdk: flutter

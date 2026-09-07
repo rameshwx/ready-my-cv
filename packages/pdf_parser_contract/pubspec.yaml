@@ -1,0 +1,17 @@
+name: pdf_parser_contract
+description: Local PDF parser contracts and typed failures.
+publish_to: none
+version: 1.0.0
+resolution: workspace
+environment:
+  sdk: ^3.8.1
+dependencies:
+  core_models:
+    path: ../core_models
+  freezed_annotation: ^3.0.0
+  json_annotation: ^4.9.0
+dev_dependencies:
+  build_runner: ^2.4.15
+  freezed: ^3.0.0
+  json_serializable: ^6.9.5
+  test: ^1.25.15

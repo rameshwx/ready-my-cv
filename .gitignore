@@ -5,3 +5,8 @@ api/node_modules/
 api/dist/
 .env
 *.log
+.flutter-plugins
+.flutter-plugins-dependencies
+.idea/
+**/.dart_tool/
+**/build/

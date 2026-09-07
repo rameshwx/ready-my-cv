@@ -9,6 +9,6 @@
 | Iteration 4 | Phrase boundaries prevent partial substring matches; contradictory classification is reserved for explicit conflict rules. | Retained; expand catalog exclusions. |
 | Iteration 5 | Recomputing score bounds and unique rule credit blocks inconsistent display. | Retained as mandatory verifier. |
 | Removed experiment | Raw occurrence count rewarded repeated keywords and raised false positives on the stuffing case. | Removed from final engine. |
-| Final | Approved aliases + section/action context + fixed multipliers + verification are deterministic and cost zero. | Ship and review synthetic failures before rule publication. |
+| Final | Approved aliases + section/action context + fixed multipliers + verification are deterministic and cost zero. Generated run: 20 cases, macro-F1 0.800, traceability 1.000, repeatability 1.000, 0 failures. | Ship and review synthetic failures before rule publication. |
 
 Generated comparison evidence is produced by the commands in the README. Remaining limitation: deterministic text rules cannot confirm whether a claim is true; recommendations are deliberately conditional and never ask applicants to fabricate experience.

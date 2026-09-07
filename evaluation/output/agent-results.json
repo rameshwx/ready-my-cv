@@ -8,9 +8,11 @@
       "strong",
       "strong"
     ],
-    "score": 100,
+    "score": 81,
     "verified": true,
-    "runtimeMs": 0,
+    "repeatRunConsistent": true,
+    "evidenceTraceability": 1.0,
+    "runtimeMs": 16,
     "costUsd": 0
   },
   {
@@ -22,8 +24,10 @@
       "mention_only",
       "mention_only"
     ],
-    "score": 20,
+    "score": 28,
     "verified": true,
+    "repeatRunConsistent": true,
+    "evidenceTraceability": 1.0,
     "runtimeMs": 0,
     "costUsd": 0
   },
@@ -36,9 +40,11 @@
       "missing",
       "missing"
     ],
-    "score": 20,
+    "score": 34,
     "verified": true,
-    "runtimeMs": 0,
+    "repeatRunConsistent": true,
+    "evidenceTraceability": 1.0,
+    "runtimeMs": 1,
     "costUsd": 0
   },
   {
@@ -50,9 +56,11 @@
       "strong",
       "strong"
     ],
-    "score": 100,
+    "score": 81,
     "verified": true,
-    "runtimeMs": 0,
+    "repeatRunConsistent": true,
+    "evidenceTraceability": 1.0,
+    "runtimeMs": 1,
     "costUsd": 0
   },
   {
@@ -64,8 +72,10 @@
       "weak",
       "weak"
     ],
-    "score": 50,
+    "score": 38,
     "verified": true,
+    "repeatRunConsistent": true,
+    "evidenceTraceability": 1.0,
     "runtimeMs": 0,
     "costUsd": 0
   },
@@ -78,8 +88,10 @@
       "missing",
       "missing"
     ],
-    "score": 0,
+    "score": 21,
     "verified": true,
+    "repeatRunConsistent": true,
+    "evidenceTraceability": 1.0,
     "runtimeMs": 0,
     "costUsd": 0
   },
@@ -92,9 +104,11 @@
       "strong",
       "strong"
     ],
-    "score": 100,
+    "score": 81,
     "verified": true,
-    "runtimeMs": 0,
+    "repeatRunConsistent": true,
+    "evidenceTraceability": 1.0,
+    "runtimeMs": 2,
     "costUsd": 0
   },
   {
@@ -106,8 +120,10 @@
       "missing",
       "missing"
     ],
-    "score": 20,
+    "score": 34,
     "verified": true,
+    "repeatRunConsistent": true,
+    "evidenceTraceability": 1.0,
     "runtimeMs": 0,
     "costUsd": 0
   },
@@ -120,9 +136,11 @@
       "strong",
       "strong"
     ],
-    "score": 100,
+    "score": 81,
     "verified": true,
-    "runtimeMs": 0,
+    "repeatRunConsistent": true,
+    "evidenceTraceability": 1.0,
+    "runtimeMs": 1,
     "costUsd": 0
   },
   {
@@ -134,8 +152,10 @@
       "mention_only",
       "mention_only"
     ],
-    "score": 20,
+    "score": 28,
     "verified": true,
+    "repeatRunConsistent": true,
+    "evidenceTraceability": 1.0,
     "runtimeMs": 0,
     "costUsd": 0
   },
@@ -148,9 +168,11 @@
       "strong",
       "strong"
     ],
-    "score": 100,
+    "score": 81,
     "verified": true,
-    "runtimeMs": 0,
+    "repeatRunConsistent": true,
+    "evidenceTraceability": 1.0,
+    "runtimeMs": 2,
     "costUsd": 0
   },
   {
@@ -162,8 +184,10 @@
       "missing",
       "missing"
     ],
-    "score": 0,
+    "score": 21,
     "verified": true,
+    "repeatRunConsistent": true,
+    "evidenceTraceability": 1.0,
     "runtimeMs": 0,
     "costUsd": 0
   },
@@ -176,9 +200,11 @@
       "strong",
       "strong"
     ],
-    "score": 100,
+    "score": 81,
     "verified": true,
-    "runtimeMs": 0,
+    "repeatRunConsistent": true,
+    "evidenceTraceability": 1.0,
+    "runtimeMs": 2,
     "costUsd": 0
   },
   {
@@ -190,9 +216,11 @@
       "strong",
       "missing"
     ],
-    "score": 40,
+    "score": 44,
     "verified": true,
-    "runtimeMs": 0,
+    "repeatRunConsistent": true,
+    "evidenceTraceability": 1.0,
+    "runtimeMs": 1,
     "costUsd": 0
   },
   {
@@ -204,9 +232,11 @@
       "strong",
       "strong"
     ],
-    "score": 100,
+    "score": 81,
     "verified": true,
-    "runtimeMs": 0,
+    "repeatRunConsistent": true,
+    "evidenceTraceability": 1.0,
+    "runtimeMs": 1,
     "costUsd": 0
   },
   {
@@ -218,9 +248,11 @@
       "strong",
       "strong"
     ],
-    "score": 100,
+    "score": 81,
     "verified": true,
-    "runtimeMs": 0,
+    "repeatRunConsistent": true,
+    "evidenceTraceability": 1.0,
+    "runtimeMs": 7,
     "costUsd": 0
   },
   {
@@ -232,9 +264,11 @@
       "strong",
       "strong"
     ],
-    "score": 100,
+    "score": 81,
     "verified": true,
-    "runtimeMs": 0,
+    "repeatRunConsistent": true,
+    "evidenceTraceability": 1.0,
+    "runtimeMs": 7,
     "costUsd": 0
   },
   {
@@ -246,9 +280,11 @@
       "strong",
       "strong"
     ],
-    "score": 100,
+    "score": 81,
     "verified": true,
-    "runtimeMs": 0,
+    "repeatRunConsistent": true,
+    "evidenceTraceability": 1.0,
+    "runtimeMs": 2,
     "costUsd": 0
   },
   {
@@ -260,9 +296,11 @@
       "strong",
       "strong"
     ],
-    "score": 100,
+    "score": 81,
     "verified": true,
-    "runtimeMs": 0,
+    "repeatRunConsistent": true,
+    "evidenceTraceability": 1.0,
+    "runtimeMs": 2,
     "costUsd": 0
   },
   {
@@ -274,8 +312,10 @@
       "weak",
       "weak"
     ],
-    "score": 50,
+    "score": 36,
     "verified": true,
+    "repeatRunConsistent": true,
+    "evidenceTraceability": 1.0,
     "runtimeMs": 0,
     "costUsd": 0
   }

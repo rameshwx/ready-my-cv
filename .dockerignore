@@ -6,3 +6,9 @@ api/dist
 .env
 *.pdf
 evaluation/output
+.idea
+.flutter-plugins
+.flutter-plugins-dependencies
+**/.dart_tool
+**/build
+docs/.DS_Store

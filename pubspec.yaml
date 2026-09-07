@@ -1,22 +1,28 @@
-name: ready_my_cv
-description: Privacy-first deterministic CV role-readiness analysis.
+name: ready_my_cv_workspace
+description: Ready My CV workspace.
 publish_to: none
-version: 1.0.0+1
 environment:
   sdk: ^3.8.1
-dependencies:
-  flutter:
-    sdk: flutter
-  flutter_riverpod: ^2.6.1
-  go_router: ^15.1.2
-  file_picker: ^10.1.9
-  http: ^1.4.0
-  js: ^0.7.2
+
+workspace:
+  - apps/web
+  - packages/core_models
+  - packages/catalog_models
+  - packages/scoring_engine
+  - packages/agent_engine
+  - packages/pdf_parser_contract
+  - packages/validation
+  - packages/design_system
+  - packages/test_fixtures
+
 dev_dependencies:
-  flutter_test:
-    sdk: flutter
-  flutter_lints: ^5.0.0
-flutter:
-  uses-material-design: true
-  assets:
-    - assets/app_logo.png
+  build_runner: ^2.4.15
+dependencies:
+  agent_engine:
+    path: packages/agent_engine
+  catalog_models:
+    path: packages/catalog_models
+  core_models:
+    path: packages/core_models
+  pdf_parser_contract:
+    path: packages/pdf_parser_contract

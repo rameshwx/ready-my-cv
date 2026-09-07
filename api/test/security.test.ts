@@ -1,4 +1,30 @@
-import assert from 'node:assert/strict';import { test } from 'node:test';import { readFile } from 'node:fs/promises';import { initialCatalog } from '../src/catalog.js';
-test('catalog includes eleven roles with unique rule IDs',()=>{assert.equal(initialCatalog.roles.length,11);const ids=initialCatalog.roles.flatMap(r=>r.requirements.map(x=>x.id));assert.equal(ids.length,new Set(ids).size);});
-test('migration enforces singleton administrator and contains no CV storage',async()=>{const sql=await readFile(new URL('../migrations/001_initial.sql',import.meta.url),'utf8');assert.match(sql,/CHECK\(id=1\)/);assert.doesNotMatch(sql,/CREATE TABLE (cv|visitor_result|uploaded)/i);});
-test('server contains no JWT or CV upload endpoints',async()=>{const source=await readFile(new URL('../src/app.ts',import.meta.url),'utf8');assert.doesNotMatch(source,/\/upload|\/score-cv|jsonwebtoken|bearer/i);assert.match(source,/httpOnly:true/);});
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import { test } from 'node:test';
+
+import { initialCatalog } from '../src/catalog.js';
+
+test('catalog includes eleven roles with unique rule IDs and seniority coverage', () => {
+  assert.equal(initialCatalog.roles.length, 11);
+  assert.ok(initialCatalog.roles.every((role) => role.seniorities.length >= 4));
+  const ids = initialCatalog.roles.flatMap((role) => role.requirements.map((rule) => rule.id));
+  assert.equal(ids.length, new Set(ids).size);
+});
+
+test('migration enforces singleton administrator, RLS, and contains no CV storage', async () => {
+  const sql = await readFile(new URL('../migrations/001_initial.sql', import.meta.url), 'utf8');
+  assert.match(sql, /CHECK\s*\(\s*id\s*=\s*1\s*\)/);
+  assert.match(sql, /ENABLE ROW LEVEL SECURITY/);
+  assert.match(sql, /FORCE ROW LEVEL SECURITY/);
+  assert.match(sql, /CREATE POLICY/);
+  assert.match(sql, /lookup_admin_credentials/);
+  assert.doesNotMatch(sql, /CREATE TABLE\s+(cv|visitor_result|uploaded)/i);
+});
+
+test('server contains no JWT or CV upload endpoints and uses session cookies', async () => {
+  const app = await readFile(new URL('../src/app.ts', import.meta.url), 'utf8');
+  const auth = await readFile(new URL('../src/modules/auth/routes.ts', import.meta.url), 'utf8');
+  assert.doesNotMatch(`${app}\n${auth}`, /\/upload|\/score-cv|jsonwebtoken|bearer|refresh.?token/i);
+  assert.match(auth, /httpOnly:\s*true/);
+  assert.match(auth, /sameSite:\s*'strict'/);
+});

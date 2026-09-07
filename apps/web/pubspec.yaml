@@ -1,0 +1,45 @@
+name: ready_my_cv_web
+description: Ready My CV Flutter Web application.
+publish_to: none
+version: 1.0.0+1
+resolution: workspace
+environment:
+  sdk: ^3.8.1
+  flutter: '>=3.32.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+  go_router: ^15.1.2
+  file_picker: ^10.1.9
+  http: ^1.4.0
+  freezed_annotation: ^3.0.0
+  agent_engine:
+    path: ../../packages/agent_engine
+  catalog_models:
+    path: ../../packages/catalog_models
+  core_models:
+    path: ../../packages/core_models
+  design_system:
+    path: ../../packages/design_system
+  pdf_parser_contract:
+    path: ../../packages/pdf_parser_contract
+  scoring_engine:
+    path: ../../packages/scoring_engine
+  validation:
+    path: ../../packages/validation
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  build_runner: ^2.4.15
+  riverpod_generator: ^2.6.5
+  json_serializable: ^6.9.5
+  freezed: ^3.0.0
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/app_logo.png

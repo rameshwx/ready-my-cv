@@ -1,9 +1,13 @@
 # Evaluation comparison
 
-All 20 cases were reported. The final deterministic workflow differentiates contextual evidence from keyword presence; the fair baseline treats occurrences as matches.
+The final workflow uses the shared typed agent engine. The baseline uses exact canonical-term matching with the same role weights and no aliases, section context, or evidence classification.
 
 | Measure | Baseline | Final |
 |---|---:|---:|
 | Cases | 20 | 20 |
-| Repeat consistency | 100% | 100% |
-| Cost/case | 0 | 0 |
+| Requirement macro-F1 | n/a | 0.800 |
+| Strong false positives | n/a | 0 |
+| Evidence traceability | n/a | 1.0 |
+| Repeat consistency | n/a | 1.0 |
+| Runtime per case (ms) | n/a | 2.25 |
+| Cost per case (USD) | 0 | 0 |

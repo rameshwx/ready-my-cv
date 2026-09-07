@@ -1,0 +1,12 @@
+name: test_fixtures
+description: Synthetic fixtures shared by tests and evaluation.
+publish_to: none
+version: 1.0.0
+resolution: workspace
+environment:
+  sdk: ^3.8.1
+dependencies:
+  catalog_models:
+    path: ../catalog_models
+  core_models:
+    path: ../core_models

@@ -1,1 +1,86 @@
-{"caseId":"backend-strong","agents":["parser","requirements","normalizer","investigator","scorer","recommender","verifier"]}
+[
+  {
+    "agent": "CvParserAgent",
+    "step": 0,
+    "goal": "Convert local PDF into structured CV data",
+    "tool": "localPdfJsParser",
+    "observation": "1 pages parsed locally",
+    "decision": "parsed",
+    "confidence": 1.0,
+    "stateUpdate": "document = parsed local document",
+    "nextAgent": "RequirementAnalysisAgent",
+    "retry": false
+  },
+  {
+    "agent": "RequirementAnalysisAgent",
+    "step": 1,
+    "goal": "Build the weighted requirement plan",
+    "tool": "publishedCatalog",
+    "observation": "5 validated rules",
+    "decision": "planned",
+    "confidence": 1.0,
+    "stateUpdate": "requirements = ordered published rules",
+    "nextAgent": "SkillNormalizationAgent",
+    "retry": false
+  },
+  {
+    "agent": "SkillNormalizationAgent",
+    "step": 2,
+    "goal": "Resolve only approved canonical terms and aliases",
+    "tool": "boundaryMatcher",
+    "observation": "5 approved term matches",
+    "decision": "normalized",
+    "confidence": 1.0,
+    "stateUpdate": "normalizedTerms = approved matches",
+    "nextAgent": "EvidenceInvestigationAgent",
+    "retry": false
+  },
+  {
+    "agent": "EvidenceInvestigationAgent",
+    "step": 3,
+    "goal": "Classify credible evidence for each requirement",
+    "tool": "sectionAwareMatcher",
+    "observation": "5 requirement classifications",
+    "decision": "classified",
+    "confidence": 1.0,
+    "stateUpdate": "evidence = bounded per-rule classifications",
+    "nextAgent": "ScoringAgent",
+    "retry": false
+  },
+  {
+    "agent": "ScoringAgent",
+    "step": 4,
+    "goal": "Calculate bounded deterministic score components",
+    "tool": "scoringPolicy",
+    "observation": "total=81",
+    "decision": "scored",
+    "confidence": 1.0,
+    "stateUpdate": "score = recomputable bounded components",
+    "nextAgent": "RecommendationAgent",
+    "retry": false
+  },
+  {
+    "agent": "RecommendationAgent",
+    "step": 5,
+    "goal": "Select truthful predefined recommendations",
+    "tool": "recommendationCatalog",
+    "observation": "1 conditional recommendations",
+    "decision": "recommended",
+    "confidence": 1.0,
+    "stateUpdate": "recommendations = predefined truthful copy",
+    "nextAgent": "VerificationAgent",
+    "retry": false
+  },
+  {
+    "agent": "VerificationAgent",
+    "step": 6,
+    "goal": "Reject unsupported or inconsistent completed results",
+    "tool": "verificationPolicy",
+    "observation": "all checks passed",
+    "decision": "verified",
+    "confidence": 1.0,
+    "stateUpdate": "verification = true",
+    "nextAgent": null,
+    "retry": false
+  }
+]
