@@ -1,0 +1,25 @@
+name: Pull request
+on: [pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env: {POSTGRES_PASSWORD: postgres, POSTGRES_DB: ready_my_cv}
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready" --health-interval 10s --health-timeout 5s --health-retries 5
+    env: {DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/ready_my_cv', SESSION_HASH_PEPPER: 'ci-only-pepper-value-at-least-32-characters'}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with: {flutter-version: '3.32.0', channel: stable, cache: true}
+      - uses: actions/setup-node@v4
+        with: {node-version: '22', cache: npm, cache-dependency-path: api/package-lock.json}
+      - run: flutter pub get
+      - run: dart format --output=none --set-exit-if-changed lib test evaluation
+      - run: flutter analyze && flutter test
+      - run: npm ci && npm run typecheck && npm test && npm run db:migrate && npm run db:seed
+        working-directory: api
+      - run: dart run evaluation/bin/run_baseline.dart && dart run evaluation/bin/run_agents.dart && dart run evaluation/bin/compare_results.dart
+      - run: '! rg -i "(/upload-cv|/score-cv|jsonwebtoken|bearer token)" api/src api/migrations'

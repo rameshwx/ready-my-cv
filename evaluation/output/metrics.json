@@ -1,0 +1,8 @@
+{
+  "cases": 20,
+  "repeatRunConsistency": 1.0,
+  "evidenceTraceability": 1.0,
+  "failedCases": 0,
+  "costPerCaseUsd": 0,
+  "note": "Synthetic gold-labelled evaluation; rerun after every rule change."
+}

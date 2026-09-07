@@ -1,0 +1,4 @@
+import assert from 'node:assert/strict';import { test } from 'node:test';import { readFile } from 'node:fs/promises';import { initialCatalog } from '../src/catalog.js';
+test('catalog includes eleven roles with unique rule IDs',()=>{assert.equal(initialCatalog.roles.length,11);const ids=initialCatalog.roles.flatMap(r=>r.requirements.map(x=>x.id));assert.equal(ids.length,new Set(ids).size);});
+test('migration enforces singleton administrator and contains no CV storage',async()=>{const sql=await readFile(new URL('../migrations/001_initial.sql',import.meta.url),'utf8');assert.match(sql,/CHECK\(id=1\)/);assert.doesNotMatch(sql,/CREATE TABLE (cv|visitor_result|uploaded)/i);});
+test('server contains no JWT or CV upload endpoints',async()=>{const source=await readFile(new URL('../src/app.ts',import.meta.url),'utf8');assert.doesNotMatch(source,/\/upload|\/score-cv|jsonwebtoken|bearer/i);assert.match(source,/httpOnly:true/);});

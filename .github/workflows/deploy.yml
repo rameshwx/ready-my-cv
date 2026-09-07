@@ -1,0 +1,8 @@
+name: Prepare Coolify deployment
+on: {workflow_dispatch: {}}
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deployment handoff
+        run: echo "Deploy the GHCR image tagged with the selected commit SHA after approving the Coolify target."

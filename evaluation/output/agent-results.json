@@ -1,0 +1,282 @@
+[
+  {
+    "id": "android-strong",
+    "classifications": [
+      "strong",
+      "strong",
+      "strong",
+      "strong",
+      "strong"
+    ],
+    "score": 100,
+    "verified": true,
+    "runtimeMs": 0,
+    "costUsd": 0
+  },
+  {
+    "id": "android-keywords",
+    "classifications": [
+      "mention_only",
+      "mention_only",
+      "mention_only",
+      "mention_only",
+      "mention_only"
+    ],
+    "score": 20,
+    "verified": true,
+    "runtimeMs": 0,
+    "costUsd": 0
+  },
+  {
+    "id": "android-alias",
+    "classifications": [
+      "missing",
+      "missing",
+      "strong",
+      "missing",
+      "missing"
+    ],
+    "score": 20,
+    "verified": true,
+    "runtimeMs": 0,
+    "costUsd": 0
+  },
+  {
+    "id": "flutter-strong",
+    "classifications": [
+      "strong",
+      "strong",
+      "strong",
+      "strong",
+      "strong"
+    ],
+    "score": 100,
+    "verified": true,
+    "runtimeMs": 0,
+    "costUsd": 0
+  },
+  {
+    "id": "flutter-weak",
+    "classifications": [
+      "weak",
+      "weak",
+      "weak",
+      "weak",
+      "weak"
+    ],
+    "score": 50,
+    "verified": true,
+    "runtimeMs": 0,
+    "costUsd": 0
+  },
+  {
+    "id": "flutter-missing",
+    "classifications": [
+      "missing",
+      "missing",
+      "missing",
+      "missing",
+      "missing"
+    ],
+    "score": 0,
+    "verified": true,
+    "runtimeMs": 0,
+    "costUsd": 0
+  },
+  {
+    "id": "kmp-strong",
+    "classifications": [
+      "strong",
+      "strong",
+      "strong",
+      "strong",
+      "strong"
+    ],
+    "score": 100,
+    "verified": true,
+    "runtimeMs": 0,
+    "costUsd": 0
+  },
+  {
+    "id": "kmp-alias",
+    "classifications": [
+      "missing",
+      "strong",
+      "missing",
+      "missing",
+      "missing"
+    ],
+    "score": 20,
+    "verified": true,
+    "runtimeMs": 0,
+    "costUsd": 0
+  },
+  {
+    "id": "ios-strong",
+    "classifications": [
+      "strong",
+      "strong",
+      "strong",
+      "strong",
+      "strong"
+    ],
+    "score": 100,
+    "verified": true,
+    "runtimeMs": 0,
+    "costUsd": 0
+  },
+  {
+    "id": "ios-list",
+    "classifications": [
+      "mention_only",
+      "mention_only",
+      "mention_only",
+      "mention_only",
+      "mention_only"
+    ],
+    "score": 20,
+    "verified": true,
+    "runtimeMs": 0,
+    "costUsd": 0
+  },
+  {
+    "id": "frontend-strong",
+    "classifications": [
+      "strong",
+      "strong",
+      "strong",
+      "strong",
+      "strong"
+    ],
+    "score": 100,
+    "verified": true,
+    "runtimeMs": 0,
+    "costUsd": 0
+  },
+  {
+    "id": "frontend-partial",
+    "classifications": [
+      "missing",
+      "missing",
+      "missing",
+      "missing",
+      "missing"
+    ],
+    "score": 0,
+    "verified": true,
+    "runtimeMs": 0,
+    "costUsd": 0
+  },
+  {
+    "id": "backend-strong",
+    "classifications": [
+      "strong",
+      "strong",
+      "strong",
+      "strong",
+      "strong"
+    ],
+    "score": 100,
+    "verified": true,
+    "runtimeMs": 0,
+    "costUsd": 0
+  },
+  {
+    "id": "backend-alias",
+    "classifications": [
+      "strong",
+      "missing",
+      "missing",
+      "strong",
+      "missing"
+    ],
+    "score": 40,
+    "verified": true,
+    "runtimeMs": 0,
+    "costUsd": 0
+  },
+  {
+    "id": "fullstack-strong",
+    "classifications": [
+      "strong",
+      "strong",
+      "strong",
+      "strong",
+      "strong"
+    ],
+    "score": 100,
+    "verified": true,
+    "runtimeMs": 0,
+    "costUsd": 0
+  },
+  {
+    "id": "qa-strong",
+    "classifications": [
+      "strong",
+      "strong",
+      "strong",
+      "strong",
+      "strong"
+    ],
+    "score": 100,
+    "verified": true,
+    "runtimeMs": 0,
+    "costUsd": 0
+  },
+  {
+    "id": "devops-strong",
+    "classifications": [
+      "strong",
+      "strong",
+      "strong",
+      "strong",
+      "strong"
+    ],
+    "score": 100,
+    "verified": true,
+    "runtimeMs": 0,
+    "costUsd": 0
+  },
+  {
+    "id": "design-strong",
+    "classifications": [
+      "strong",
+      "strong",
+      "strong",
+      "strong",
+      "strong"
+    ],
+    "score": 100,
+    "verified": true,
+    "runtimeMs": 0,
+    "costUsd": 0
+  },
+  {
+    "id": "pm-strong",
+    "classifications": [
+      "strong",
+      "strong",
+      "strong",
+      "strong",
+      "strong"
+    ],
+    "score": 100,
+    "verified": true,
+    "runtimeMs": 0,
+    "costUsd": 0
+  },
+  {
+    "id": "stuffing-hard",
+    "classifications": [
+      "weak",
+      "weak",
+      "weak",
+      "weak",
+      "weak"
+    ],
+    "score": 50,
+    "verified": true,
+    "runtimeMs": 0,
+    "costUsd": 0
+  }
+]

@@ -1,0 +1,102 @@
+[
+  {
+    "id": "android-strong",
+    "score": 100,
+    "method": "exact-keyword-baseline"
+  },
+  {
+    "id": "android-keywords",
+    "score": 90,
+    "method": "exact-keyword-baseline"
+  },
+  {
+    "id": "android-alias",
+    "score": 40,
+    "method": "exact-keyword-baseline"
+  },
+  {
+    "id": "flutter-strong",
+    "score": 80,
+    "method": "exact-keyword-baseline"
+  },
+  {
+    "id": "flutter-weak",
+    "score": 60,
+    "method": "exact-keyword-baseline"
+  },
+  {
+    "id": "flutter-missing",
+    "score": 30,
+    "method": "exact-keyword-baseline"
+  },
+  {
+    "id": "kmp-strong",
+    "score": 80,
+    "method": "exact-keyword-baseline"
+  },
+  {
+    "id": "kmp-alias",
+    "score": 30,
+    "method": "exact-keyword-baseline"
+  },
+  {
+    "id": "ios-strong",
+    "score": 80,
+    "method": "exact-keyword-baseline"
+  },
+  {
+    "id": "ios-list",
+    "score": 70,
+    "method": "exact-keyword-baseline"
+  },
+  {
+    "id": "frontend-strong",
+    "score": 70,
+    "method": "exact-keyword-baseline"
+  },
+  {
+    "id": "frontend-partial",
+    "score": 10,
+    "method": "exact-keyword-baseline"
+  },
+  {
+    "id": "backend-strong",
+    "score": 80,
+    "method": "exact-keyword-baseline"
+  },
+  {
+    "id": "backend-alias",
+    "score": 40,
+    "method": "exact-keyword-baseline"
+  },
+  {
+    "id": "fullstack-strong",
+    "score": 70,
+    "method": "exact-keyword-baseline"
+  },
+  {
+    "id": "qa-strong",
+    "score": 40,
+    "method": "exact-keyword-baseline"
+  },
+  {
+    "id": "devops-strong",
+    "score": 50,
+    "method": "exact-keyword-baseline"
+  },
+  {
+    "id": "design-strong",
+    "score": 30,
+    "method": "exact-keyword-baseline"
+  },
+  {
+    "id": "pm-strong",
+    "score": 30,
+    "method": "exact-keyword-baseline"
+  },
+  {
+    "id": "stuffing-hard",
+    "score": 100,
+    "method": "exact-keyword-baseline"
+  }
+]

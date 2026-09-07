@@ -1,0 +1,22 @@
+[
+{"id":"android-strong","role":"Android Developer","text":"Experience Built Kotlin Android SDK apps with Jetpack Compose and REST APIs using Git.","gold":["strong","strong","strong","strong","strong"]},
+{"id":"android-keywords","role":"Android Developer","text":"Skills Kotlin, Android SDK, Jetpack Compose, REST APIs, Git","gold":["mention_only","mention_only","mention_only","mention_only","mention_only"]},
+{"id":"android-alias","role":"Android Developer","text":"Projects Developed Android user interfaces with Compose.","gold":["missing","missing","strong","missing","missing"]},
+{"id":"flutter-strong","role":"Flutter Developer","text":"Experience Developed Flutter and Dart apps with Riverpod, integrated REST APIs and Git.","gold":["strong","strong","strong","strong","strong"]},
+{"id":"flutter-weak","role":"Flutter Developer","text":"Projects Flutter Dart Riverpod REST Git","gold":["weak","weak","weak","weak","weak"]},
+{"id":"flutter-missing","role":"Flutter Developer","text":"Education Bachelor of Computing","gold":["missing","missing","missing","missing","missing"]},
+{"id":"kmp-strong","role":"Kotlin Multiplatform Developer","text":"Experience Built Kotlin KMP products using Coroutines, Compose Multiplatform and Git.","gold":["strong","strong","strong","strong","strong"]},
+{"id":"kmp-alias","role":"Kotlin Multiplatform Developer","text":"Projects Developed shared mobile code with KMP.","gold":["missing","strong","missing","missing","missing"]},
+{"id":"ios-strong","role":"iOS Developer","text":"Experience Developed Swift and SwiftUI apps with iOS SDK, REST APIs and Git.","gold":["strong","strong","strong","strong","strong"]},
+{"id":"ios-list","role":"iOS Developer","text":"Skills Swift SwiftUI iOS SDK REST APIs Git","gold":["mention_only","mention_only","mention_only","mention_only","mention_only"]},
+{"id":"frontend-strong","role":"Frontend Developer","text":"Experience Built JavaScript and TypeScript interfaces with HTML CSS using Git.","gold":["strong","strong","strong","strong","strong"]},
+{"id":"frontend-partial","role":"Frontend Developer","text":"Experience managed manuscript styles","gold":["missing","missing","missing","missing","missing"]},
+{"id":"backend-strong","role":"Backend Developer","text":"Projects Developed Node.js REST APIs backed by PostgreSQL and SQL using Git.","gold":["strong","strong","strong","strong","strong"]},
+{"id":"backend-alias","role":"Backend Developer","text":"Experience Built a Node service using Postgres.","gold":["strong","missing","missing","strong","missing"]},
+{"id":"fullstack-strong","role":"Full Stack Developer","text":"Experience Built TypeScript React applications with Node.js PostgreSQL and Git.","gold":["strong","strong","strong","strong","strong"]},
+{"id":"qa-strong","role":"QA Engineer","text":"Experience Implemented test automation, API testing and regression testing; managed bug tracking in Git.","gold":["strong","strong","strong","strong","strong"]},
+{"id":"devops-strong","role":"DevOps Engineer","text":"Projects Built Docker CI/CD on Linux cloud infrastructure with monitoring.","gold":["strong","strong","strong","strong","strong"]},
+{"id":"design-strong","role":"UI/UX Designer","text":"Experience Led user research, wireframing and prototyping in Figma with usability testing.","gold":["strong","strong","strong","strong","strong"]},
+{"id":"pm-strong","role":"Project Manager","text":"Experience Led project planning, risk management, stakeholder management and Agile delivery.","gold":["strong","strong","strong","strong","strong"]},
+{"id":"stuffing-hard","role":"Flutter Developer","text":"Flutter Flutter Flutter Dart Dart Riverpod REST APIs Git. Keywords only; no work evidence.","gold":["weak","weak","weak","weak","weak"]}
+]
