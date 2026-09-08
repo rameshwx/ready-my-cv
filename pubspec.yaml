@@ -11,6 +11,7 @@ workspace:
   - packages/scoring_engine
   - packages/agent_engine
   - packages/pdf_parser_contract
+  - packages/server_analysis_runner
   - packages/validation
   - packages/design_system
   - packages/test_fixtures

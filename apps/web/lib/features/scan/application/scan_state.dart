@@ -11,7 +11,10 @@ abstract class ScanState with _$ScanState {
     JobRole? role,
     String? seniority,
     AnalysisResult? result,
+    String? jobHandle,
     String? errorMessage,
+    @Default(false) bool consentGiven,
+    @Default(false) bool emailSent,
     @Default(false) bool busy,
   }) = _ScanState;
 }

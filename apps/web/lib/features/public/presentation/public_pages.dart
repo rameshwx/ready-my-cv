@@ -12,6 +12,9 @@ import '../../../app/providers.dart';
 import '../../role_request/application/role_request_view_model.dart';
 import '../../scan/application/scan_view_model.dart';
 
+const privacyNotice =
+    'To support more PDF formats, your CV will be temporarily uploaded to our secure server for processing. The uploaded file, extracted text, analysis report, and any email address you provide will be deleted after processing and report delivery. We do not use your CV for training, advertising, or other purposes.';
+
 class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.child});
 
@@ -64,7 +67,7 @@ class LandingPage extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             const Text(
-              'Private, evidence-based guidance that runs in your browser — not another mysterious ATS score.',
+              'Private, evidence-based guidance in your browser with temporary server processing — not another mysterious ATS score.',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 18),
             ),
@@ -88,11 +91,24 @@ class LandingPage extends StatelessWidget {
   );
 }
 
-class ScanPage extends ConsumerWidget {
+class ScanPage extends ConsumerStatefulWidget {
   const ScanPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ScanPage> createState() => _ScanPageState();
+}
+
+class _ScanPageState extends ConsumerState<ScanPage> {
+  final emailController = TextEditingController();
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final catalog = ref.watch(publishedCatalogProvider);
     final scan = ref.watch(scanViewModelProvider);
     return AppShell(
@@ -107,7 +123,7 @@ class ScanPage extends ConsumerWidget {
                 style: Theme.of(context).textTheme.headlineLarge,
               ),
               const Text(
-                'Select a role and a text-based PDF. Your CV never leaves this browser.',
+                'Select a role and a PDF. The server uses local PDF tools and the existing deterministic analysis engine.',
               ),
               const SizedBox(height: 20),
               catalog.when(
@@ -125,7 +141,7 @@ class ScanPage extends ConsumerWidget {
                         ),
                       )
                       .toList(),
-                  onChanged: scan.busy
+                  onChanged: scan.busy || scan.stage == ScanStage.awaitingEmail
                       ? null
                       : (role) => role == null
                             ? null
@@ -152,7 +168,7 @@ class ScanPage extends ConsumerWidget {
                         ),
                       )
                       .toList(),
-                  onChanged: scan.busy
+                  onChanged: scan.busy || scan.stage == ScanStage.awaitingEmail
                       ? null
                       : (value) => value == null
                             ? null
@@ -162,36 +178,83 @@ class ScanPage extends ConsumerWidget {
                 ),
               ],
               const SizedBox(height: 16),
-              PrivacyBanner(
-                child: const Text(
-                  'Your CV is read privately in this browser. We do not upload, store, or save your CV data anywhere.',
+              PrivacyBanner(child: const Text(privacyNotice)),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                value: scan.consentGiven,
+                onChanged: scan.busy || scan.stage == ScanStage.awaitingEmail
+                    ? null
+                    : (value) => ref
+                          .read(scanViewModelProvider.notifier)
+                          .setConsent(value ?? false),
+                title: const Text(
+                  'I understand and agree to this temporary processing notice.',
                 ),
               ),
               const SizedBox(height: 16),
               FilledButton.icon(
-                onPressed: scan.busy || scan.role == null
+                onPressed:
+                    scan.busy ||
+                        scan.stage == ScanStage.awaitingEmail ||
+                        scan.role == null ||
+                        !scan.consentGiven
                     ? null
                     : () => _pick(context, ref),
                 icon: const Icon(Icons.upload_file),
                 label: const Text('Select PDF'),
               ),
               const Text(
-                'PDF • 10 MB max • 25 pages • selectable text',
+                'PDF • 10 MB max • 25 pages • text or scanned pages',
                 textAlign: TextAlign.center,
               ),
-              if (scan.busy) ...[
+              if (scan.busy || scan.stage == ScanStage.awaitingEmail) ...[
                 const SizedBox(height: 16),
                 LinearProgressIndicator(
                   value: scan.stage == ScanStage.completed ? 1 : null,
                 ),
                 const SizedBox(height: 8),
                 Text(_stageLabel(scan.stage), textAlign: TextAlign.center),
-                TextButton(
-                  onPressed: () =>
-                      ref.read(scanViewModelProvider.notifier).cancel(),
-                  child: const Text('Cancel'),
-                ),
+                if (scan.stage == ScanStage.awaitingEmail) ...[
+                  const SizedBox(height: 12),
+                  const Text(
+                    'This analysis is taking longer than usual. Enter your email address and we will send your completed report when it is ready.',
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    enabled: !scan.busy,
+                    decoration: const InputDecoration(
+                      labelText: 'Email address',
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  FilledButton(
+                    onPressed: scan.busy
+                        ? null
+                        : () => ref
+                              .read(scanViewModelProvider.notifier)
+                              .sendEmail(emailController.text),
+                    child: const Text('Email my report'),
+                  ),
+                  const Text(
+                    'We will use this address only to deliver this report. No marketing messages.',
+                  ),
+                ],
+                if (scan.jobHandle != null)
+                  TextButton(
+                    onPressed: () =>
+                        ref.read(scanViewModelProvider.notifier).cancel(),
+                    child: const Text('Cancel'),
+                  ),
               ],
+              if (scan.stage == ScanStage.completed && scan.emailSent)
+                const Padding(
+                  padding: EdgeInsets.only(top: 12),
+                  child: Text(
+                    'Your report was accepted for email delivery. Temporary processing data is purged after delivery; your email provider may retain the message.',
+                  ),
+                ),
               if (scan.errorMessage != null) ...[
                 const SizedBox(height: 12),
                 Text(
@@ -224,14 +287,17 @@ class ScanPage extends ConsumerWidget {
     }
     final bytes = picked.files.single.bytes;
     if (bytes == null ||
-        picked.files.single.extension?.toLowerCase() != 'pdf') {
+        picked.files.single.extension?.toLowerCase() != 'pdf' ||
+        picked.files.single.name.toLowerCase().endsWith('.pdf') == false) {
       if (bytes != null) {
         bytes.fillRange(0, bytes.length, 0);
       }
       viewModel.fileSelectionCancelled();
       return;
     }
-    await viewModel.analyze(Uint8List.fromList(bytes));
+    final uploadBytes = Uint8List.fromList(bytes);
+    bytes.fillRange(0, bytes.length, 0);
+    await viewModel.analyze(uploadBytes);
     if (context.mounted &&
         ref.read(scanViewModelProvider).stage == ScanStage.completed) {
       context.go('/results');
@@ -446,12 +512,19 @@ class InfoPage extends StatelessWidget {
 
 String _stageLabel(ScanStage stage) => switch (stage) {
   ScanStage.loadingCatalog => 'Loading catalog…',
-  ScanStage.selectingFile => 'Select a local PDF…',
-  ScanStage.validatingFile => 'Validating file locally…',
-  ScanStage.extracting => 'Extracting text locally…',
+  ScanStage.selectingFile => 'Select a PDF…',
+  ScanStage.validatingFile => 'Validating PDF…',
+  ScanStage.uploading => 'Uploading securely…',
+  ScanStage.queued => 'Queued…',
+  ScanStage.processing => 'Processing…',
+  ScanStage.preparingReport => 'Preparing report…',
+  ScanStage.awaitingEmail => 'Email required for delayed delivery',
+  ScanStage.sendingEmail => 'Sending email…',
+  ScanStage.extracting => 'Processing PDF…',
   ScanStage.analyzing => 'Analyzing requirements…',
   ScanStage.verifying => 'Verifying result…',
   ScanStage.completed => 'Complete',
+  ScanStage.expired => 'Expired',
   ScanStage.cancelled => 'Cancelled',
   ScanStage.failed => 'Failed',
   _ => 'Preparing…',

@@ -3,6 +3,8 @@
 
 Copy this entire prompt into Codex to implement the product.
 
+> Update: `Modification_Request_1.md` supersedes the historical local-only/no-upload requirements in this prompt. Use those statements only to understand the prior baseline; implement the consent-gated temporary backend processing, queue, email, and purge behavior in the modification request.
+
 ---
 
 ## Role
@@ -35,7 +37,7 @@ The central product insight is:
 
 This is an applicant guidance tool. It is not an employer applicant-tracking system, does not predict an employer's actual ATS score, does not rank candidates, and does not guarantee an interview or job offer.
 
-The product must work without an LLM, an AI API, OCR, or a model server. The agentic behavior must be implemented as a coordinated, deterministic software-agent workflow with explicit state, tools, decisions, verification, retries, and trajectories.
+The product must work without an LLM, an AI API, or a model server. Optional local server OCR is allowed for scanned pages; no external OCR service is allowed. The agentic behavior must be implemented as a coordinated, deterministic software-agent workflow with explicit state, tools, decisions, verification, retries, and trajectories.
 
 ## Non-negotiable requirements
 
@@ -46,8 +48,8 @@ The product must work without an LLM, an AI API, OCR, or a model server. The age
 5. Use GoRouter for the single route tree, including the protected administrator routes under <code>/admin</code>.
 6. Use PostgreSQL as the authoritative database and Node.js LTS with TypeScript as the only backend application boundary. Flutter must never connect directly to PostgreSQL.
 7. The browser client and backend communicate only through same-origin application routes used by this product. Do not publish, document, or support a general public API, external API base URL, CORS API, API keys for callers, or public developer contract.
-8. Process the visitor's PDF entirely in the browser using PDF.js through Dart/JavaScript interop.
-9. Never upload, store, cache, log, back up, hash, fingerprint, or transmit the PDF, extracted CV text, file name, individual score, individual recommendations, or detailed visitor analysis.
+8. Perform only basic extension, MIME, size, empty-file, and magic-byte checks in the browser; complete PDF extraction and analysis run server-side with local tools and the canonical deterministic Dart engine after explicit consent.
+9. Temporarily store only encrypted job payloads on the backend, never raw filename/IP/document hash/CV text in logs or analytics, and purge PDF, document, report, email, and queue metadata after terminal processing. Do not expose permanent reports, visitor accounts, or history.
 10. Do not create any upload-CV, parse-CV, extract-PDF, score-CV, save-result, or download-CV backend route.
 11. Do not create public accounts, visitor registration, public login, subscriptions, pricing, paywalls, premium features, or feature limits.
 12. The only authenticated product area is the administrator portal at <code>https://cv.uxi.asia/admin</code>.
@@ -98,7 +100,7 @@ Suggested initial repository metadata:
 | Navigation | GoRouter with one protected route tree |
 | Immutable models | Freezed and JSON serialization, or an equally strongly typed approach |
 | Design system | Shared Flutter package using Material 3 and custom theme tokens |
-| PDF extraction | PDF.js loaded locally in the browser through Dart JavaScript interop |
+| PDF extraction | Poppler utilities and local Tesseract in the application image; PDF.js remains a compatibility-only client contract |
 | Shared business logic | Pure Dart packages with no Flutter or browser dependency where possible |
 | Agent workflow | Deterministic typed Dart workflow engine |
 | Backend application | Node.js LTS, TypeScript, Fastify, and typed same-origin application route modules |
@@ -124,18 +126,21 @@ Use current stable versions that are mutually compatible at implementation time.
 ~~~mermaid
 flowchart TD
     Browser[Browser at cv.uxi.asia] --> Flutter[Single Flutter Web application]
-    Flutter --> Local[Local PDF.js and Dart agent workflow]
-    Local --> Memory[In-memory result and trajectory]
+    Flutter --> Consent[Exact consent and basic PDF validation]
+    Consent --> Node[Node.js upload and queue worker]
+    Node --> Parser[Poppler and local Tesseract]
+    Parser --> Runner[Private compiled Dart agent runner]
+    Runner --> Memory[In-memory fast result or sanitized email report]
     Flutter --> Internal[Same-origin internal application routes]
-    Internal --> Node[Node.js application server]
+    Internal --> Node
     Node --> PostgreSQL[(PostgreSQL in the same Coolify project)]
     Admin[/admin route/] --> Session[Server-side administrator session cookie]
     Session --> Node
 ~~~
 
-The public and administrator experiences are features of the same Flutter Web bundle. The Node.js application serves that bundle and handles only the internal same-origin application routes needed for the catalog, role requests, aggregate events, administrator session, catalog management, settings, and health checks.
+The public and administrator experiences are features of the same Flutter Web bundle. The Node.js application serves that bundle and handles only the internal same-origin application routes needed for the catalog, role requests, aggregate events, temporary analysis jobs, administrator session, catalog management, settings, and health checks.
 
-The CV document and extracted text may flow only between the browser file picker, the local PDF.js adapter, the local agent workflow, and the in-memory result view. They must never flow to the Node.js application, PostgreSQL, server logs, analytics, ad providers, PayPal, browser storage, service-worker caches, URLs, or backups.
+After consent, the PDF may flow to the Node.js application and private PostgreSQL only as encrypted temporary job data; Poppler/Tesseract and the compiled Dart runner never send content to external services. CV data must never flow to logs, analytics, ad providers, PayPal, browser storage, service-worker caches, URLs, or unrelated third parties. Backup retention limitations must be documented accurately.
 
 There is no separately exposed public API. A browser route such as <code>/app/catalog</code> is an implementation detail of the same-origin application and must not be treated as an external API, accept cross-origin access, or expose a reusable API contract.
 
@@ -303,7 +308,7 @@ Build one Flutter Web bundle with one GoRouter configuration.
 | Route | Screen |
 | --- | --- |
 | <code>/</code> | Landing page and product introduction |
-| <code>/scan</code> | Role selection, PDF picker, local analysis workflow |
+| <code>/scan</code> | Role selection, consent-gated temporary backend upload and analysis workflow |
 | <code>/results</code> | In-memory result view, never a server-backed result URL |
 | <code>/request-role</code> | Missing-role request form without attachments |
 | <code>/privacy</code> | Privacy policy and third-party provider disclosures |
@@ -328,14 +333,14 @@ Before the visitor selects a file, clearly show:
 
 - 100% free service.
 - No account or sign-in required.
-- CV is read privately in the browser.
-- CV is not uploaded, stored, or saved anywhere by the service.
+- CV is processed privately after explicit consent through a temporary same-origin backend job.
+- CV, extracted text, report, and any delayed-delivery email are encrypted while active and purged after completion, delivery, cancellation, expiry, or permanent failure.
 - The score is role-specific guidance, not an employer's ATS score.
 - The visitor selects a target role before scanning.
 
-Display this privacy message near the file picker:
+Display this consent message near the file picker:
 
-> Your CV is read privately in this browser. We do not upload, store, or save your CV data anywhere.
+> To support more PDF formats, your CV will be temporarily uploaded to our secure server for processing. The uploaded file, extracted text, analysis report, and any email address you provide will be deleted after processing and report delivery. We do not use your CV for training, advertising, or other purposes.
 
 Display this disclaimer on the result view:
 
@@ -346,13 +351,13 @@ Display this disclaimer on the result view:
 1. Fetch the current published catalog through a same-origin application route.
 2. Search and select a supported role.
 3. Select an optional seniority level.
-4. Pick a local PDF or drop it into the local file zone.
-5. Validate file type, file size, page count, encryption status, and selectable text locally.
-6. Extract text locally through PDF.js.
-7. Run the deterministic agent workflow in the browser.
-8. Show progress such as Parsing, Analyzing requirements, Investigating evidence, Scoring, Verifying, and Complete.
-9. Show the explainable result only after verification succeeds.
-10. Provide <code>Analyze another CV</code>, which clears the document, text, trajectory, and result from memory.
+4. Accept the exact temporary-processing consent notice.
+5. Pick a PDF and perform only extension, MIME, size, empty-file, and magic-byte validation in the browser.
+6. Upload one PDF to the same-origin backend job route.
+7. Parse and analyze on the backend with Poppler/local Tesseract and the canonical deterministic Dart agent workflow.
+8. Show Uploading securely, Queued, Processing, Preparing report, Awaiting email, Sending email, Complete, Expired, Failed, and Cancelled states.
+9. Show a verified fast result only after server-side verification; delayed results are email-only and have no permanent URL.
+10. Provide <code>Analyze another CV</code>, which clears the handle, email, bytes, result, and route-local state from memory.
 
 Initial limits:
 
@@ -360,7 +365,7 @@ Initial limits:
 - Maximum 10 MB.
 - Maximum 25 pages.
 - Selectable text required.
-- No OCR, DOCX, image-only PDF fallback, password bypass, server upload, or cloud document processing.
+- Local English OCR fallback is supported server-side for scanned pages; there is no password bypass or cloud document processing.
 
 Handle invalid, corrupt, protected, image-only, oversized, and wrong-format documents with clear recoverable local errors.
 
@@ -385,7 +390,7 @@ Show:
 - A collapsible <code>How this result was produced</code> trajectory view for the current in-memory session.
 - Privacy reminder and disclaimer.
 
-Do not provide cloud save, shareable result URLs, result uploads, result history, or automatic CV rewriting.
+Do not provide cloud save, shareable result URLs, result history, or automatic CV rewriting. Delayed reports are delivered by SMTP only after explicit email consent.
 
 ### Role request form
 
@@ -497,7 +502,7 @@ Do not implement an administrators list, administrator CRUD, user management, ro
 The administrator portal must never show visitor CV files, extracted CV text, file names, document hashes, individual scores, detailed visitor results, or visitor-level analysis history.
 
 
-## Local PDF.js implementation
+## PDF parser compatibility contract
 
 Create a dedicated abstraction such as:
 
@@ -507,7 +512,7 @@ abstract interface class LocalPdfParser {
 }
 ~~~
 
-Implement the production web adapter using PDF.js loaded locally as a static asset. Use Dart JavaScript interop, not a server route. The adapter must:
+Keep the contract and fake parser for pure-Dart compatibility tests. Production uses the Node server parser with Poppler and local Tesseract, then passes the structured document to the private compiled Dart runner. The optional web adapter must:
 
 - Accept bytes from the browser file picker.
 - Pass them to PDF.js as an in-memory <code>Uint8Array</code>.
@@ -567,11 +572,11 @@ Implement the following seven bounded software agents. They are logical software
 
 ### 1. CV Parser Agent
 
-Goal: convert the local PDF into a structured CV representation.
+Goal: convert the server-parsed PDF into a structured CV representation.
 
 Tools:
 
-- Local PDF.js adapter.
+- Poppler `pdfinfo`/`pdftotext`, bounded `pdftoppm`/Tesseract OCR, and the structured-document runner adapter.
 - Text cleanup and Unicode normalization.
 - Heading and section detector.
 - Date-range parser.
@@ -776,7 +781,7 @@ Capture an in-memory trajectory entry for every agent step:
 }
 ~~~
 
-The public experience may display this trajectory during the current session, but never uploads or persists it. Evaluation trajectories may be exported because they use synthetic CVs only. The administrator must never receive visitor trajectories.
+The public experience may display this trajectory during the current session for a fast result, but never persists it in browser storage or a permanent URL. A delayed email contains only the sanitized report. Evaluation trajectories may be exported because they use synthetic CVs only. The administrator must never receive visitor trajectories.
 
 ## Rule catalog and seed data
 
@@ -850,7 +855,7 @@ Database rules:
 - Catalog publication must atomically validate, snapshot, mark the version published, and create an audit event.
 - A username/password change must atomically update the singleton account, set or clear the first-login flag as appropriate, revoke all sessions, and create a redacted audit event.
 - PostgreSQL must not be exposed on a public port in production.
-- Do not create any table for CV files, CV text, individual results, or visitor history.
+- Create only the temporary encrypted `analysis_jobs` table required by `Modification_Request_1.md`; never create permanent CV, individual-result, visitor-account, or visitor-history storage.
 
 
 ## Node.js application server
@@ -865,7 +870,11 @@ These routes are internal browser-application routes. They must accept only the 
 
 Public-facing application routes:
 
-- <code>GET /app/catalog</code>: current published catalog JSON, version, roles, and rules required for local analysis.
+- <code>GET /app/catalog</code>: current published catalog JSON, version, roles, and rules required for role selection and server analysis.
+- <code>POST /app/analysis-jobs</code>: exact one-file, consent-gated temporary PDF job; internal same-origin route only.
+- <code>GET /app/analysis-jobs/:handle/status</code>: safe aggregate job state for the matching ephemeral handle.
+- <code>POST /app/analysis-jobs/:handle/email</code>: validated delayed-report email consent.
+- <code>POST /app/analysis-jobs/:handle/cancel</code>: terminal purge request.
 - <code>GET /app/config</code>: safe public configuration such as donation URL and ad flags.
 - <code>POST /app/role-requests</code>: validated role request with no attachments or CV data.
 - <code>POST /app/metrics</code>: optional allowlisted aggregate event with no CV content.
@@ -937,7 +946,7 @@ The account update route must:
 - Use transaction boundaries for publication, role changes, settings changes, credential changes, and audit events.
 - Never use a superuser or <code>BYPASSRLS</code> database connection in request handlers.
 - Never accept a PDF, extracted text, document name, score, recommendation, or trajectory.
-- Accept JSON only for defined routes. Reject multipart, octet-stream, unknown file-like fields, and request bodies above a small documented limit, for example 128 KiB.
+- Accept JSON for normal routes and strictly bounded multipart only on `POST /app/analysis-jobs`; reject octet-stream, unknown file-like fields, and oversized request bodies.
 - Do not log request bodies containing free text, raw passwords, session cookies, authorization headers, email addresses, or database errors.
 - Rate-limit public role requests and metric events.
 - Normalize and length-limit public free-text fields.
@@ -991,18 +1000,18 @@ Implement privacy as code, not only as a written promise.
 
 ### Browser privacy
 
-- Keep PDF bytes and extracted text in scoped in-memory objects.
+- Keep the PDF bytes, temporary job handle, email, and fast result in scoped in-memory objects only.
 - Do not put CV data in URLs, query strings, fragments, cookies, local storage, IndexedDB, service-worker cache, analytics payloads, error reports, or third-party requests.
 - The administrator session cookie is HttpOnly and contains only a server-generated session identifier; it must never contain CV data.
 - Use redacted logs only. In production, do not log document metadata that can identify the visitor's file.
 - Clear buffers, parsed pages, trajectory, and result state when a scan is reset.
 - Disable or isolate ads on scan and result routes.
-- Do not send the PDF to the Node.js application even when catalog fetching fails.
+- Send the PDF only after the exact consent notice is accepted, only to the same-origin analysis-job route, and never to analytics, ads, LLMs, or unrelated services.
 
 ### Server privacy
 
-- Do not define CV-related database tables or routes.
-- Reject unexpected file uploads at the Coolify proxy and Node.js application layers.
+- Define only temporary encrypted `analysis_jobs` storage and the internal same-origin analysis-job routes from `Modification_Request_1.md`; do not expose a public API or documentation.
+- Reject unexpected file uploads, additional multipart files/fields, spoofed MIME types, malformed/encrypted PDFs, excessive pages/pixels, and oversized requests at the Node.js application layer.
 - Redact secrets, passwords, session cookies, authorization headers, request bodies, email addresses where possible, and all CV-like content from logs.
 - Use CSP, HTTPS, secure headers, strict same-origin handling, and appropriate frame/referrer policies.
 - Keep PostgreSQL private to the Coolify project network.
@@ -1015,7 +1024,7 @@ Add automated tests that:
 
 - Intercept browser network calls during a scan.
 - Assert that no request body, URL, header, cookie, or third-party request contains known synthetic CV markers.
-- Assert that no file upload request occurs.
+- Assert that the only file upload request is the consent-gated same-origin `/app/analysis-jobs` request and that no synthetic CV marker appears in URLs, cookies, analytics, or unrelated third-party requests.
 - Assert that reset clears the in-memory result and trajectory.
 - Search source code and Node.js route definitions for forbidden CV endpoint names.
 - Verify no database migration creates CV storage or visitor result tables.
@@ -1183,7 +1192,7 @@ For each stage, record the hypothesis, changed code/rules, metrics, representati
 
 Cover:
 
-1. Public role selection and local PDF scan.
+1. Public role selection, consent, backend PDF scan, and fast/queued delivery.
 2. Strong/weak/mention-only/missing/contradictory evidence rendering.
 3. Invalid and unsupported PDF errors.
 4. Role request submission without attachment.
@@ -1231,11 +1240,11 @@ PostgreSQL is a persistent Coolify resource in the same project, not a process i
 - Do not expose a public API host, subdomain, port, API key, or cross-origin route.
 - Allow the Coolify proxy to forward only HTTPS traffic to the application container.
 - Keep PostgreSQL private to the Coolify project network and do not expose port <code>5432</code> publicly.
-- Configure request-size limits, JSON-only application routes, strict same-origin checks, security headers, CSP, compression, and safe health responses.
-- Reject multipart, file-upload, octet-stream, and CV-like request payloads at both the proxy configuration available in Coolify and the Node.js application.
-- Provide <code>/health/live</code> and <code>/health/ready</code>. The ready check may verify database connectivity but must not reveal connection strings, schema details, credentials, or query errors.
-- Do not mount any directory intended for CV uploads because no CV upload exists.
-- Configure PostgreSQL backups through Coolify or the approved VPS backup process. Backups must contain only application data intentionally persisted by the schema, never CV data.
+- Configure request-size limits, strict same-origin checks, security headers, CSP, compression, and safe health responses; JSON is required except for multipart on the exact analysis upload route.
+- Permit one consent-gated PDF upload only at `/app/analysis-jobs`; enforce magic bytes, generated names, MIME matching, page/pixel/OCR bounds, and queue limits at the Node.js application.
+- Provide <code>/health/live</code> and <code>/health/ready</code>. The ready check may verify database, worker cleanup, and production SMTP readiness but must not reveal connection strings, schema details, credentials, or query errors.
+- Use only the private generated temporary directory required by the analysis worker; do not mount a persistent upload volume.
+- Configure PostgreSQL backups through Coolify or the approved VPS backup process. Analysis payloads are encrypted but backups may retain historical pages until their configured retention expires; do not claim application purge removes them retroactively.
 
 ### Root Dockerfile expectations
 
@@ -1344,7 +1353,7 @@ On an approved merge or manual dispatch:
 2. Deploy the exact commit-SHA image, or ask Coolify to build that exact commit with the root <code>Dockerfile</code>.
 3. Apply checked-in PostgreSQL migrations through the configured release command before serving the new version.
 4. Keep the Coolify PostgreSQL resource attached to the same project and private network.
-5. Run public page, administrator route, login/session, catalog, health, HTTPS, database-privacy, and no-upload smoke checks.
+5. Run public page, administrator route, login/session, catalog, consent-gated analysis, health, HTTPS, database-privacy, cleanup, and no-public-API smoke checks.
 6. Preserve the previous deployment if verification fails.
 7. Record the deployed commit, single image tag, migration status, catalog version, and backup status.
 
@@ -1435,7 +1444,7 @@ Implement in this order, but continue through every phase in the same task unles
 ### Phase 4: Public experience
 
 - Implement landing, scan, results, request, privacy, and terms routes in the single Flutter application.
-- Integrate local PDF.js.
+- Integrate the backend analysis-job repository and retain local PDF.js only for optional basic validation compatibility.
 - Integrate catalog fetch without CV data through same-origin application routes.
 - Implement responsive accessible UI and privacy messaging.
 - Add PayPal/ad feature flags outside the scan flow.
@@ -1475,14 +1484,14 @@ Do not finish until the following checklist is satisfied or an external blocker 
 - [ ] One Flutter Web application builds successfully and contains both public and administrator route areas.
 - [ ] The application uses Clean Architecture, feature-first organization, Riverpod state/DI, immutable models, and GoRouter.
 - [ ] Public visitor scanning works without registration or login.
-- [ ] Text-based PDFs are parsed locally by PDF.js.
-- [ ] Scanned, protected, corrupt, oversized, and wrong-format files fail safely without server fallback.
+- [ ] The browser performs only basic validation; server-side Poppler parses text and local English Tesseract provides bounded scanned-page OCR fallback.
+- [ ] Protected, corrupt, oversized, excessive-page/pixel, and wrong-format files fail safely.
 - [ ] All seven deterministic agents execute in the documented order.
 - [ ] Evidence classifications and source references are visible and explainable.
 - [ ] Score calculation is deterministic, bounded, versioned, and independently tested.
 - [ ] Verification rejects unsupported or inconsistent results before display.
-- [ ] No CV data or visitor result data reaches the Node.js application, PostgreSQL, server logs, storage, analytics, PayPal, ads, URLs, or browser persistence.
-- [ ] No forbidden CV endpoint or database table exists.
+- [ ] CV data reaches the Node.js application/PostgreSQL only after consent as encrypted temporary job payloads, and never reaches server logs, analytics, PayPal, ads, URLs, or browser persistence.
+- [ ] No permanent CV/result/history table or public API exists; only temporary encrypted `analysis_jobs` storage is present.
 - [ ] The public catalog is versioned in PostgreSQL and fetched through an internal same-origin application route.
 - [ ] No public or third-party API, API key, CORS API, API host, or public API documentation exists.
 - [ ] A newly initialized database creates exactly one administrator account with username <code>rameshwx</code> and password <code>rameshwx</code>, with only an Argon2id hash stored.
@@ -1522,6 +1531,6 @@ When the implementation is complete, provide:
 9. Confirmation that the normal administrator login uses username/password, the initial credentials are <code>rameshwx</code>/<code>rameshwx</code>, and credentials can be changed in <code>/admin/account</code>.
 10. Confirmation that no public or third-party API and no token-based administrator login were implemented.
 11. Any remaining manual configuration or external blocker.
-12. A short privacy verification summary proving that the CV never leaves the browser.
+12. A short privacy verification summary proving that upload requires the exact consent, processing is temporary/encrypted, no CV data is persisted in browser storage or logs, and backup/email-provider retention limitations are stated accurately.
 
 Be precise. Separate verified results from pending manual actions.

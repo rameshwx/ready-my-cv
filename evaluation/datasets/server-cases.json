@@ -1,0 +1,20 @@
+[
+  {
+    "id": "text-pdf",
+    "kind": "text",
+    "fixture": "text-cv-fixture.pdf.b64",
+    "expected": "server-poppler-and-dart-runner"
+  },
+  {
+    "id": "malformed-pdf",
+    "kind": "malformed",
+    "fixture": "%PDF-not-a-real-document",
+    "expected": "safe-malformed-error"
+  },
+  {
+    "id": "scanned-pdf",
+    "kind": "scanned",
+    "fixture": "generated-in-CI-with-a-local-image-only-PDF",
+    "expected": "bounded-tesseract-fallback"
+  }
+]

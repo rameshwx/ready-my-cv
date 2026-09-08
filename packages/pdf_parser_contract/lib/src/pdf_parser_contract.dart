@@ -43,7 +43,8 @@ abstract interface class LocalPdfParser {
 }
 
 /// Deterministic parser used by pure-Dart tests and evaluation fixtures.
-/// Production uses the browser-only PDF.js adapter in the web app.
+/// Production sends the PDF to the same-origin server parser; the web adapter
+/// remains only as a compatibility contract for basic client validation.
 class FakeLocalPdfParser implements LocalPdfParser {
   const FakeLocalPdfParser({this.pageCount = 1});
 

@@ -307,6 +307,8 @@ class _DashboardContent extends StatelessWidget {
               _metric('Role requests', snapshot.data!['roleRequests']),
               _metric('Roles', snapshot.data!['roles']),
               _metric('Aggregate events', snapshot.data!['aggregateEvents']),
+              _metric('Analysis queue', snapshot.data!['queue']),
+              _metric('Analysis failures', snapshot.data!['failures']),
             ],
           )
         : const CircularProgressIndicator(),

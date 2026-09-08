@@ -105,6 +105,6 @@ class _RouterRefresh extends ChangeNotifier {
 }
 
 const _privacy =
-    'Your PDF, extracted CV text, evidence, score, and trajectory remain in browser memory. They are never uploaded, stored, logged, fingerprinted, or shared.';
+    'Your PDF is uploaded only after you accept the temporary processing notice. The PDF, extracted text, report, and any report-delivery email address are deleted after processing, delivery, cancellation, or expiry. Ready My CV does not use CV content for training, advertising, analytics, or unrelated purposes, and does not create visitor accounts or permanent analysis history. Your email provider may retain a delivered report.';
 const _terms =
     'This is deterministic guidance based on the selected role rules. It is not an employer ATS score, hiring decision, or guarantee of an interview or job offer. Never add experience you do not have.';

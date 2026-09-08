@@ -1,6 +1,3 @@
-import 'dart:typed_data';
-
-import 'package:agent_engine/agent_engine.dart';
 import 'package:catalog_models/catalog_models.dart';
 import 'package:core_models/core_models.dart';
 
@@ -56,12 +53,45 @@ abstract interface class AdminRepository {
   Future<void> updateSettings(Map<String, dynamic> values);
 }
 
-abstract interface class ScanWorkflow {
-  Future<AnalysisResult> run({
-    required Uint8List bytes,
-    required JobRole role,
-    required CatalogSnapshot catalog,
-    String? seniority,
-    CancellationToken? cancellationToken,
+class AnalysisUpload {
+  const AnalysisUpload({
+    required this.handle,
+    required this.status,
+    required this.mode,
+    this.result,
+    this.pollAfterMs = 1500,
   });
+
+  final String handle;
+  final String status;
+  final String mode;
+  final AnalysisResult? result;
+  final int pollAfterMs;
+}
+
+class AnalysisJobStatus {
+  const AnalysisJobStatus({
+    required this.status,
+    required this.emailRequired,
+    required this.pollAfterMs,
+  });
+
+  final String status;
+  final bool emailRequired;
+  final int pollAfterMs;
+}
+
+abstract interface class AnalysisJobRepository {
+  Future<AnalysisUpload> upload({
+    required List<int> bytes,
+    required String roleSlug,
+    String? seniority,
+    required bool consent,
+  });
+
+  Future<AnalysisJobStatus> status(String handle);
+
+  Future<void> sendEmail({required String handle, required String email});
+
+  Future<void> cancel(String handle);
 }

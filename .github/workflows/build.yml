@@ -13,6 +13,8 @@ jobs:
     env:
       DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/ready_my_cv'
       SESSION_HASH_PEPPER: 'ci-only-pepper-value-at-least-32-characters'
+      DATA_ENCRYPTION_KEY: '0000000000000000000000000000000000000000000000000000000000000000'
+      JOB_HANDLE_PEPPER: 'ci-only-job-handle-pepper-value-at-least-32-characters'
       ADMIN_INITIAL_PASSWORD: 'ci-only-initial-password'
       PUBLIC_ORIGIN: 'http://localhost:8080'
     steps:
@@ -30,6 +32,7 @@ jobs:
         working-directory: packages/pdf_parser_contract
       - run: dart run build_runner build --delete-conflicting-outputs
         working-directory: apps/web
+      - run: dart compile exe packages/server_analysis_runner/bin/server_analysis_runner.dart -o /tmp/server_analysis_runner
       - run: flutter analyze && flutter test
         working-directory: apps/web
       - run: flutter build web --release --no-source-maps
@@ -39,10 +42,36 @@ jobs:
           test ! -e apps/web/web/manifest.json
           test ! -e apps/web/build/web/manifest.json
           ! rg -n -i 'rel="manifest"|mobile-web-app-capable|apple-mobile-web-app|apple-touch-icon' apps/web/web/index.html apps/web/build/web/index.html
+          ! rg -n -i 'pdf_parser\.js|pdfjs/' apps/web/web/index.html apps/web/build/web/index.html
       - run: npm ci && npm run typecheck && npm run build && npm test && npm run db:migrate && npm run db:seed
         working-directory: api
       - run: dart run evaluation/bin/run_agents.dart && dart run evaluation/bin/compare_results.dart
       - run: docker build --tag ready-my-cv:ci .
+      - run: |
+          docker run --rm -v "$GITHUB_WORKSPACE/evaluation/datasets:/fixtures:ro" --entrypoint sh ready-my-cv:ci -c 'pdfinfo -v >/dev/null && tesseract --version >/dev/null && test -x /app/bin/server_analysis_runner && base64 -d /fixtures/text-cv-fixture.pdf.b64 > /tmp/text-cv.pdf && pdfinfo /tmp/text-cv.pdf | grep -q "Pages: *1" && pdftotext /tmp/text-cv.pdf - | grep -q "Flutter"'
+      - name: Smoke test image health endpoints
+        run: |
+          set -e
+          docker run -d --network host --name ready-my-cv-ci \
+            -e DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:5432/ready_my_cv' \
+            -e SESSION_HASH_PEPPER='ci-only-pepper-value-at-least-32-characters' \
+            -e DATA_ENCRYPTION_KEY='0000000000000000000000000000000000000000000000000000000000000000' \
+            -e JOB_HANDLE_PEPPER='ci-only-job-handle-pepper-value-at-least-32-characters' \
+            -e ADMIN_INITIAL_PASSWORD='ci-only-initial-password' \
+            -e PUBLIC_ORIGIN='http://localhost:8080' \
+            -e SMTP_HOST='127.0.0.1' -e SMTP_USER='ci' -e SMTP_PASSWORD='ci' \
+            -e EMAIL_FROM='ci@example.com' \
+            ready-my-cv:ci
+          trap 'docker rm -f ready-my-cv-ci >/dev/null 2>&1 || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8080/health/live >/dev/null; then
+              curl --fail --silent http://127.0.0.1:8080/health/ready >/dev/null
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs ready-my-cv-ci
+          exit 1
   image:
     runs-on: ubuntu-latest
     needs: verify

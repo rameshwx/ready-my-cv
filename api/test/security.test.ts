@@ -21,10 +21,26 @@ test('migration enforces singleton administrator, RLS, and contains no CV storag
   assert.doesNotMatch(sql, /CREATE TABLE\s+(cv|visitor_result|uploaded)/i);
 });
 
+test('analysis migration contains encrypted temporary queue storage and no visitor history fields', async () => {
+  const sql = await readFile(new URL('../migrations/002_analysis_jobs.sql', import.meta.url), 'utf8');
+  assert.match(sql, /CREATE TABLE analysis_jobs/);
+  assert.match(sql, /id uuid PRIMARY KEY/);
+  assert.match(sql, /handle_hash text NOT NULL UNIQUE/);
+  assert.match(sql, /pdf_payload bytea/);
+  assert.match(sql, /document_payload bytea/);
+  assert.match(sql, /report_payload bytea/);
+  assert.match(sql, /email_payload bytea/);
+  assert.match(sql, /FOR UPDATE SKIP LOCKED|analysis_jobs_queue_lookup/);
+  assert.match(sql, /FORCE ROW LEVEL SECURITY/);
+  assert.match(sql, /analysis_request/);
+  assert.doesNotMatch(sql, /filename|raw_ip|document_hash|visitor_id|cv_text/i);
+});
+
 test('server contains no JWT or CV upload endpoints and uses session cookies', async () => {
   const app = await readFile(new URL('../src/app.ts', import.meta.url), 'utf8');
   const auth = await readFile(new URL('../src/modules/auth/routes.ts', import.meta.url), 'utf8');
   assert.doesNotMatch(`${app}\n${auth}`, /\/upload|\/score-cv|jsonwebtoken|bearer|refresh.?token/i);
+  assert.match(app, /multipart\/form-data/);
   assert.match(auth, /httpOnly:\s*true/);
   assert.match(auth, /sameSite:\s*'strict'/);
 });

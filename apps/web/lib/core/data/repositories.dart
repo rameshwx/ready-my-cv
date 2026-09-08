@@ -1,6 +1,3 @@
-import 'dart:typed_data';
-
-import 'package:agent_engine/agent_engine.dart';
 import 'package:catalog_models/catalog_models.dart';
 import 'package:core_models/core_models.dart';
 
@@ -167,26 +164,69 @@ class HttpAdminRepository implements AdminRepository {
   }
 }
 
-class LocalWorkflow implements ScanWorkflow {
-  const LocalWorkflow(this.orchestrator);
+class HttpAnalysisJobRepository implements AnalysisJobRepository {
+  const HttpAnalysisJobRepository(this.client);
 
-  final WorkflowOrchestrator orchestrator;
+  final AppHttpClient client;
 
   @override
-  Future<AnalysisResult> run({
-    required Uint8List bytes,
-    required JobRole role,
-    required CatalogSnapshot catalog,
+  Future<AnalysisUpload> upload({
+    required List<int> bytes,
+    required String roleSlug,
     String? seniority,
-    CancellationToken? cancellationToken,
-  }) => orchestrator.run(
-    WorkflowRequest(
-      bytes: bytes,
-      role: role,
-      catalog: catalog,
-      seniority: seniority,
-      engineVersion: catalog.engineVersion,
-      cancellationToken: cancellationToken,
-    ),
-  );
+    required bool consent,
+  }) async {
+    final response = Map<String, dynamic>.from(
+      await client.postMultipart(
+            path: '/app/analysis-jobs',
+            bytes: bytes,
+            fields: {
+              'roleSlug': roleSlug,
+              if (seniority != null) 'seniority': seniority,
+              'consent': consent.toString(),
+            },
+          )
+          as Map,
+    );
+    final report = response['report'];
+    return AnalysisUpload(
+      handle: response['handle'] as String,
+      status: response['status'] as String,
+      mode: response['mode'] as String,
+      result: report is Map
+          ? AnalysisResult.fromJson(
+              Map<String, dynamic>.from(report['result'] as Map),
+            )
+          : null,
+      pollAfterMs: (response['pollAfterMs'] as num?)?.toInt() ?? 1500,
+    );
+  }
+
+  @override
+  Future<AnalysisJobStatus> status(String handle) async {
+    final response = Map<String, dynamic>.from(
+      await client.getJson('/app/analysis-jobs/$handle/status') as Map,
+    );
+    return AnalysisJobStatus(
+      status: response['status'] as String,
+      emailRequired: response['emailRequired'] == true,
+      pollAfterMs: (response['pollAfterMs'] as num?)?.toInt() ?? 1500,
+    );
+  }
+
+  @override
+  Future<void> sendEmail({
+    required String handle,
+    required String email,
+  }) async {
+    await client.postJson('/app/analysis-jobs/$handle/email', {
+      'email': email,
+      'consent': true,
+    });
+  }
+
+  @override
+  Future<void> cancel(String handle) async {
+    await client.postJson('/app/analysis-jobs/$handle/cancel', {});
+  }
 }

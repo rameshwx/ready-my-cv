@@ -6,11 +6,11 @@ part of 'providers.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$appHttpClientHash() => r'10ecde469f9527eac3d6332036d56bcfc78976d9';
+String _$appHttpClientHash() => r'5fb6294ffcae0d0bca915ee5b38cca3f153587b8';
 
 /// See also [appHttpClient].
 @ProviderFor(appHttpClient)
-final appHttpClientProvider = AutoDisposeProvider<AppHttpClient>.internal(
+final appHttpClientProvider = Provider<AppHttpClient>.internal(
   appHttpClient,
   name: r'appHttpClientProvider',
   debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
@@ -22,7 +22,7 @@ final appHttpClientProvider = AutoDisposeProvider<AppHttpClient>.internal(
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-typedef AppHttpClientRef = AutoDisposeProviderRef<AppHttpClient>;
+typedef AppHttpClientRef = ProviderRef<AppHttpClient>;
 String _$catalogRepositoryHash() => r'79d01f163d73b8ab21d91362efa721823afe0474';
 
 /// See also [catalogRepository].
@@ -98,59 +98,26 @@ final adminRepositoryProvider = AutoDisposeProvider<AdminRepository>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AdminRepositoryRef = AutoDisposeProviderRef<AdminRepository>;
-String _$localPdfParserHash() => r'2ca1f551bced572f3747a3e96bdde4d0740b1a7e';
+String _$analysisJobRepositoryHash() =>
+    r'8ed374cb43c0f1ffc446145b2c7d03380785075b';
 
-/// See also [localPdfParser].
-@ProviderFor(localPdfParser)
-final localPdfParserProvider = AutoDisposeProvider<LocalPdfParser>.internal(
-  localPdfParser,
-  name: r'localPdfParserProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$localPdfParserHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
-
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef LocalPdfParserRef = AutoDisposeProviderRef<LocalPdfParser>;
-String _$workflowOrchestratorHash() =>
-    r'a1edc9fb460168443d4ec21726e8201bceb07bba';
-
-/// See also [workflowOrchestrator].
-@ProviderFor(workflowOrchestrator)
-final workflowOrchestratorProvider =
-    AutoDisposeProvider<WorkflowOrchestrator>.internal(
-      workflowOrchestrator,
-      name: r'workflowOrchestratorProvider',
+/// See also [analysisJobRepository].
+@ProviderFor(analysisJobRepository)
+final analysisJobRepositoryProvider =
+    AutoDisposeProvider<AnalysisJobRepository>.internal(
+      analysisJobRepository,
+      name: r'analysisJobRepositoryProvider',
       debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
           ? null
-          : _$workflowOrchestratorHash,
+          : _$analysisJobRepositoryHash,
       dependencies: null,
       allTransitiveDependencies: null,
     );
 
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
-typedef WorkflowOrchestratorRef = AutoDisposeProviderRef<WorkflowOrchestrator>;
-String _$scanWorkflowHash() => r'cedc322bb7218f5923bfae5a872a8dda1ca565ea';
-
-/// See also [scanWorkflow].
-@ProviderFor(scanWorkflow)
-final scanWorkflowProvider = AutoDisposeProvider<ScanWorkflow>.internal(
-  scanWorkflow,
-  name: r'scanWorkflowProvider',
-  debugGetCreateSourceHash: const bool.fromEnvironment('dart.vm.product')
-      ? null
-      : _$scanWorkflowHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
-
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef ScanWorkflowRef = AutoDisposeProviderRef<ScanWorkflow>;
+typedef AnalysisJobRepositoryRef =
+    AutoDisposeProviderRef<AnalysisJobRepository>;
 String _$publishedCatalogHash() => r'9fdc07e2cab2708c52ab21781a18f9679802ed1c';
 
 /// See also [publishedCatalog].

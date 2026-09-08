@@ -17,7 +17,20 @@ export async function registerAdminRoutes(app: FastifyInstance) {
         client.query('SELECT count(*)::int AS total FROM job_roles WHERE archived_at IS NULL'),
         client.query('SELECT count(*)::int AS total FROM aggregate_events'),
       ]);
-      return { roleRequests: requests.rows[0], roles: roles.rows[0], aggregateEvents: events.rows[0] };
+      const queue = await client.query(`
+        SELECT
+          count(*) FILTER (WHERE status = 'queued')::int AS queued,
+          count(*) FILTER (WHERE status = 'processing')::int AS processing,
+          count(*) FILTER (WHERE status = 'awaiting_email')::int AS awaiting_email,
+          count(*) FILTER (WHERE status IN ('email_pending', 'email_sending'))::int AS email_pending,
+          COALESCE(max(EXTRACT(EPOCH FROM (now() - created_at))) FILTER (WHERE status = 'queued'), 0)::int AS oldest_queued_seconds,
+          COALESCE(avg(EXTRACT(EPOCH FROM (now() - processing_started_at))) FILTER (WHERE status = 'processing' AND processing_started_at IS NOT NULL), 0)::int AS active_processing_seconds
+        FROM analysis_jobs`);
+      const failures = await client.query(`
+        SELECT count(*) FILTER (WHERE event_name = 'analysis_failed')::int AS processing_failures,
+               count(*) FILTER (WHERE event_name = 'email_failed')::int AS email_failures
+        FROM aggregate_events`);
+      return { roleRequests: requests.rows[0], roles: roles.rows[0], aggregateEvents: events.rows[0], queue: queue.rows[0], failures: failures.rows[0] };
     }));
 
     scope.get('/app/admin/role-requests', async () => withAdminTransaction(async (client) => ({

@@ -29,7 +29,7 @@ class PrivacyBanner extends StatelessWidget {
       child:
           child ??
           const Text(
-            'Your CV is read privately in this browser. We do not upload, store, or save your CV data anywhere.',
+            'Your CV is uploaded only after consent and processed temporarily. We delete the CV, report, and delivery details after completion or expiry.',
           ),
     ),
   );

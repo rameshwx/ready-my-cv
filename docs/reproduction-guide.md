@@ -7,6 +7,7 @@ The checked-in implementation targets Flutter 3.32 / Dart 3.8, Node.js 22, npm 1
 ```bash
 dart pub get
 (for package in packages/core_models packages/catalog_models packages/pdf_parser_contract; do (cd "$package" && dart run build_runner build --delete-conflicting-outputs) || exit 1; done)
+(dart compile exe packages/server_analysis_runner/bin/server_analysis_runner.dart -o /tmp/ready-my-cv-server_analysis_runner)
 (cd apps/web && dart run build_runner build --delete-conflicting-outputs)
 dart format --set-exit-if-changed apps/web packages evaluation/bin
 (cd apps/web && flutter analyze)
@@ -20,6 +21,6 @@ dart run evaluation/bin/compare_results.dart
 docker build -t ready-my-cv:local .
 ```
 
-Database checks require a private PostgreSQL 16 instance and the variables in `.env.example`; run migration and seed only against a disposable local database first. Browser checks require Chrome and exercise the local PDF.js adapter, route tree, cancellation, reset, accessibility semantics, and network interception.
+Database checks require a private PostgreSQL 16 instance and the variables in `.env.example`; run migrations and seed only against a disposable local database first. Verify `002_analysis_jobs.sql` RLS, encrypted bytea payloads, handle hashing, queue leases, terminal purge, expiry, and aggregate-only admin queries. Browser checks require Chrome and exercise consent, basic PDF validation, same-origin multipart upload, polling transitions, delayed email, cancellation, route exit cleanup, accessibility semantics, and absence of browser persistence/third-party CV requests.
 
-Generated Freezed/Riverpod files are produced by `build_runner`; they are not hand-edited. The root Dockerfile repeats generation in its Flutter build stage so a clean checkout is reproducible.
+Generated Freezed/Riverpod files are produced by `build_runner`; they are not hand-edited. The root Dockerfile repeats generation, compiles the private Dart runner, installs Poppler/Tesseract, and builds the single image so a clean checkout is reproducible.
