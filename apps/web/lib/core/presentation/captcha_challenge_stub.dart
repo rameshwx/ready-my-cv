@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 
+import 'captcha_challenge_types.dart';
+
 class CaptchaChallenge extends StatelessWidget {
   const CaptchaChallenge({
     super.key,
     required this.siteKey,
     required this.onTokenChanged,
+    this.onStatusChanged,
   });
 
   final String siteKey;
   final ValueChanged<String?> onTokenChanged;
+  final ValueChanged<CaptchaRenderStatus>? onStatusChanged;
 
   @override
   Widget build(BuildContext context) => Container(

@@ -7,6 +7,8 @@ import 'dart:ui_web' as ui_web;
 
 import 'package:flutter/material.dart';
 
+import 'captcha_challenge_types.dart';
+
 @JS('renderReadyMyCvCaptcha')
 external void _renderReadyMyCvCaptcha(JSString elementId, JSString siteKey);
 
@@ -20,10 +22,12 @@ class CaptchaChallenge extends StatefulWidget {
     super.key,
     required this.siteKey,
     required this.onTokenChanged,
+    this.onStatusChanged,
   });
 
   final String siteKey;
   final ValueChanged<String?> onTokenChanged;
+  final ValueChanged<CaptchaRenderStatus>? onStatusChanged;
 
   @override
   State<CaptchaChallenge> createState() => _CaptchaChallengeState();
@@ -33,6 +37,7 @@ class _CaptchaChallengeState extends State<CaptchaChallenge> {
   late final String _elementId;
   late final String _viewType;
   StreamSubscription<html.Event>? _subscription;
+  StreamSubscription<html.Event>? _statusSubscription;
 
   @override
   void initState() {
@@ -41,7 +46,12 @@ class _CaptchaChallengeState extends State<CaptchaChallenge> {
     _elementId = 'ready-my-cv-captcha-$id';
     _viewType = _elementId;
     ui_web.platformViewRegistry.registerViewFactory(_viewType, (viewId) {
-      return html.DivElement()..id = _elementId;
+      return html.DivElement()
+        ..id = _elementId
+        ..style.width = '304px'
+        ..style.height = '78px'
+        ..style.maxWidth = '100%'
+        ..style.display = 'block';
     });
     _subscription = html.window.on['ready-my-cv-captcha-$_elementId'].listen((
       event,
@@ -50,6 +60,16 @@ class _CaptchaChallengeState extends State<CaptchaChallenge> {
       final token = detail is String && detail.isNotEmpty ? detail : null;
       widget.onTokenChanged(token);
     });
+    _statusSubscription = html
+        .window
+        .on['ready-my-cv-captcha-status-$_elementId']
+        .listen((event) {
+          final detail = (event as html.CustomEvent).detail;
+          final status = detail == 'ready'
+              ? CaptchaRenderStatus.ready
+              : CaptchaRenderStatus.blocked;
+          widget.onStatusChanged?.call(status);
+        });
   }
 
   @override
@@ -63,18 +83,21 @@ class _CaptchaChallengeState extends State<CaptchaChallenge> {
   }
 
   void _render() {
+    widget.onStatusChanged?.call(CaptchaRenderStatus.loading);
     _renderReadyMyCvCaptcha(_elementId.toJS, widget.siteKey.toJS);
   }
 
   @override
   void dispose() {
     _subscription?.cancel();
+    _statusSubscription?.cancel();
     _resetReadyMyCvCaptcha(_elementId.toJS);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) => SizedBox(
+    width: double.infinity,
     height: 82,
     child: HtmlElementView(
       viewType: _viewType,

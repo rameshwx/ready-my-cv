@@ -15,7 +15,10 @@ const schema = z.object({
   SESSION_IDLE_MINUTES: z.coerce.number().positive().default(30),
   REQUEST_BODY_LIMIT: z.coerce.number().int().positive().default(131_072),
   DATABASE_APP_ROLE: z.string().regex(/^(?:[a-z_][a-z0-9_]*)?$/).default(''),
-  CAPTCHA_SITE_KEY: z.string().trim().optional(),
+  CAPTCHA_SITE_KEY: z.string().trim().refine(
+    (value) => !value.includes('\\'),
+    'CAPTCHA_SITE_KEY must not contain backslash escape characters.',
+  ).optional(),
   CAPTCHA_SECRET: z.string().optional(),
   CAPTCHA_VERIFY_URL: z.string().url().default('https://www.google.com/recaptcha/api/siteverify'),
   ROLE_REQUEST_DEDUPE_MINUTES: z.coerce.number().int().min(1).max(1_440).default(15),
