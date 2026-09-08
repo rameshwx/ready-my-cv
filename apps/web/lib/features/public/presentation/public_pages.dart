@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/providers.dart';
+import '../../../core/presentation/captcha_challenge.dart';
 import '../../role_request/application/role_request_view_model.dart';
 import '../../scan/application/scan_state.dart';
 import '../../scan/application/scan_view_model.dart';
@@ -459,6 +460,8 @@ class ScanPage extends ConsumerStatefulWidget {
 
 class _ScanPageState extends ConsumerState<ScanPage> {
   final emailController = TextEditingController();
+  String? captchaToken;
+  int captchaGeneration = 0;
 
   @override
   void dispose() {
@@ -499,7 +502,65 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _FormStepLabel(number: '1', label: 'Target role'),
+                          const _FormStepLabel(
+                            number: '1',
+                            label: 'Before you upload',
+                          ),
+                          const SizedBox(height: 10),
+                          const PrivacyBanner(child: Text(privacyNotice)),
+                          CheckboxListTile(
+                            contentPadding: EdgeInsets.zero,
+                            value: scan.consentGiven,
+                            onChanged:
+                                scan.busy ||
+                                    scan.stage == ScanStage.awaitingEmail
+                                ? null
+                                : (value) {
+                                    final consent = value ?? false;
+                                    ref
+                                        .read(scanViewModelProvider.notifier)
+                                        .setConsent(consent);
+                                    if (!consent) {
+                                      setState(() {
+                                        captchaToken = null;
+                                        captchaGeneration++;
+                                      });
+                                    }
+                                  },
+                            title: const Text(
+                              'I understand and agree to this temporary processing notice.',
+                            ),
+                            controlAffinity: ListTileControlAffinity.leading,
+                          ),
+                          const SizedBox(height: 8),
+                          ref
+                              .watch(publicConfigProvider)
+                              .when(
+                                loading: () => const LinearProgressIndicator(),
+                                error: (error, _) => _InlineError(
+                                  message: 'CAPTCHA unavailable: $error',
+                                ),
+                                data: (config) =>
+                                    config.captchaSiteKey == null ||
+                                        config.captchaSiteKey!.isEmpty
+                                    ? const _InlineError(
+                                        message:
+                                            'CAPTCHA is not configured. Uploads are unavailable.',
+                                      )
+                                    : CaptchaChallenge(
+                                        key: ValueKey(captchaGeneration),
+                                        siteKey: config.captchaSiteKey!,
+                                        onTokenChanged: (token) {
+                                          if (mounted) {
+                                            setState(
+                                              () => captchaToken = token,
+                                            );
+                                          }
+                                        },
+                                      ),
+                              ),
+                          const SizedBox(height: 12),
+                          _FormStepLabel(number: '2', label: 'Target role'),
                           const SizedBox(height: 10),
                           catalog.when(
                             loading: () => const LinearProgressIndicator(),
@@ -526,7 +587,9 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                                     .toList(),
                                 onChanged:
                                     scan.busy ||
-                                        scan.stage == ScanStage.awaitingEmail
+                                        scan.stage == ScanStage.awaitingEmail ||
+                                        !scan.consentGiven ||
+                                        captchaToken?.isNotEmpty != true
                                     ? null
                                     : (role) {
                                         if (role == null) return;
@@ -562,7 +625,9 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                                   .toList(),
                               onChanged:
                                   scan.busy ||
-                                      scan.stage == ScanStage.awaitingEmail
+                                      scan.stage == ScanStage.awaitingEmail ||
+                                      !scan.consentGiven ||
+                                      captchaToken?.isNotEmpty != true
                                   ? null
                                   : (value) {
                                       if (value != null) {
@@ -576,14 +641,15 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                             ),
                           ],
                           const SizedBox(height: 24),
-                          _FormStepLabel(number: '2', label: 'Upload your PDF'),
+                          _FormStepLabel(number: '3', label: 'Upload your PDF'),
                           const SizedBox(height: 10),
                           InkWell(
                             onTap:
                                 scan.busy ||
                                     scan.stage == ScanStage.awaitingEmail ||
                                     scan.role == null ||
-                                    !scan.consentGiven
+                                    !scan.consentGiven ||
+                                    captchaToken?.isNotEmpty != true
                                 ? null
                                 : () => _pick(context, ref),
                             borderRadius: BorderRadius.circular(14),
@@ -616,9 +682,10 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                                   Text(
                                     scan.role == null
                                         ? 'Choose a role first'
-                                        : scan.consentGiven
+                                        : scan.consentGiven &&
+                                              captchaToken?.isNotEmpty == true
                                         ? 'Select a PDF to begin'
-                                        : 'Accept the privacy notice to upload',
+                                        : 'Complete consent and CAPTCHA to upload',
                                     style: const TextStyle(
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -632,22 +699,6 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                             ),
                           ),
                           const SizedBox(height: 20),
-                          PrivacyBanner(child: Text(privacyNotice)),
-                          CheckboxListTile(
-                            contentPadding: EdgeInsets.zero,
-                            value: scan.consentGiven,
-                            onChanged:
-                                scan.busy ||
-                                    scan.stage == ScanStage.awaitingEmail
-                                ? null
-                                : (value) => ref
-                                      .read(scanViewModelProvider.notifier)
-                                      .setConsent(value ?? false),
-                            title: const Text(
-                              'I understand and agree to this temporary processing notice.',
-                            ),
-                            controlAffinity: ListTileControlAffinity.leading,
-                          ),
                           if (scan.errorMessage != null) ...[
                             const SizedBox(height: 8),
                             _InlineError(message: scan.errorMessage!),
@@ -733,7 +784,13 @@ class _ScanPageState extends ConsumerState<ScanPage> {
     }
     final uploadBytes = Uint8List.fromList(bytes);
     bytes.fillRange(0, bytes.length, 0);
-    await viewModel.analyze(uploadBytes);
+    await viewModel.analyze(uploadBytes, captchaToken: captchaToken);
+    if (mounted) {
+      setState(() {
+        captchaToken = null;
+        captchaGeneration++;
+      });
+    }
     if (context.mounted &&
         ref.read(scanViewModelProvider).stage == ScanStage.completed &&
         ref.read(scanViewModelProvider).result != null) {
@@ -1616,6 +1673,9 @@ class _RoleRequestPageState extends ConsumerState<RoleRequestPage> {
   final industry = TextEditingController();
   final desiredSkills = TextEditingController();
   final replyEmail = TextEditingController();
+  String? captchaToken;
+  int captchaGeneration = 0;
+  bool submitting = false;
 
   @override
   void dispose() {
@@ -1630,6 +1690,7 @@ class _RoleRequestPageState extends ConsumerState<RoleRequestPage> {
   @override
   Widget build(BuildContext context) {
     final message = ref.watch(roleRequestViewModelProvider);
+    final publicConfig = ref.watch(publicConfigProvider);
     return AppShell(
       child: ListView(
         padding: const EdgeInsets.symmetric(vertical: 34),
@@ -1693,19 +1754,45 @@ class _RoleRequestPageState extends ConsumerState<RoleRequestPage> {
                           ),
                         ),
                         const SizedBox(height: 18),
+                        publicConfig.when(
+                          loading: () => const LinearProgressIndicator(),
+                          error: (error, _) => _InlineError(
+                            message: 'CAPTCHA unavailable: $error',
+                          ),
+                          data: (config) =>
+                              config.captchaSiteKey == null ||
+                                  config.captchaSiteKey!.isEmpty
+                              ? const _InlineError(
+                                  message:
+                                      'CAPTCHA is not configured. Requests are unavailable.',
+                                )
+                              : CaptchaChallenge(
+                                  key: ValueKey(captchaGeneration),
+                                  siteKey: config.captchaSiteKey!,
+                                  onTokenChanged: (token) {
+                                    if (mounted) {
+                                      setState(() => captchaToken = token);
+                                    }
+                                  },
+                                ),
+                        ),
+                        const SizedBox(height: 12),
                         SizedBox(
                           width: double.infinity,
                           child: FilledButton.icon(
-                            onPressed: () => ref
-                                .read(roleRequestViewModelProvider.notifier)
-                                .submit(
-                                  title: controller.text,
-                                  seniority: seniority.text,
-                                  industry: industry.text,
-                                  desiredSkills: desiredSkills.text,
-                                  replyEmail: replyEmail.text,
-                                ),
-                            icon: const Icon(Icons.send_outlined),
+                            onPressed:
+                                submitting || captchaToken?.isNotEmpty != true
+                                ? null
+                                : _submit,
+                            icon: submitting
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.send_outlined),
                             label: const Text('Send request'),
                           ),
                         ),
@@ -1725,6 +1812,34 @@ class _RoleRequestPageState extends ConsumerState<RoleRequestPage> {
         ],
       ),
     );
+  }
+
+  Future<void> _submit() async {
+    if (submitting) return;
+    setState(() => submitting = true);
+    final accepted = await ref
+        .read(roleRequestViewModelProvider.notifier)
+        .submit(
+          title: controller.text,
+          seniority: seniority.text,
+          industry: industry.text,
+          desiredSkills: desiredSkills.text,
+          replyEmail: replyEmail.text,
+          captchaToken: captchaToken,
+        );
+    if (!mounted) return;
+    if (accepted) {
+      controller.clear();
+      seniority.clear();
+      industry.clear();
+      desiredSkills.clear();
+      replyEmail.clear();
+    }
+    setState(() {
+      submitting = false;
+      captchaToken = null;
+      captchaGeneration++;
+    });
   }
 }
 

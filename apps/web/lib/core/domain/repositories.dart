@@ -5,14 +5,38 @@ abstract interface class CatalogRepository {
   Future<CatalogSnapshot> fetchPublished();
 }
 
+class PublicConfig {
+  const PublicConfig({
+    this.donationUrl,
+    this.adsEnabled = false,
+    this.captchaSiteKey,
+  });
+
+  final String? donationUrl;
+  final bool adsEnabled;
+  final String? captchaSiteKey;
+}
+
+abstract interface class PublicConfigRepository {
+  Future<PublicConfig> fetch();
+}
+
 abstract interface class RoleRequestRepository {
-  Future<void> submit({
+  Future<RoleRequestSubmission> submit({
     required String roleTitle,
     String? seniority,
     String? industry,
     String? desiredSkills,
     String? replyEmail,
+    required String captchaToken,
   });
+}
+
+class RoleRequestSubmission {
+  const RoleRequestSubmission({required this.accepted, this.duplicate = false});
+
+  final bool accepted;
+  final bool duplicate;
 }
 
 abstract interface class AdminSessionRepository {
@@ -33,6 +57,23 @@ abstract interface class AdminRepository {
   Future<Map<String, dynamic>> dashboard();
 
   Future<List<Map<String, dynamic>>> roles();
+
+  Future<Map<String, dynamic>> createRole({
+    required String slug,
+    required String title,
+    required String description,
+  });
+
+  Future<Map<String, dynamic>> updateRole(
+    String id,
+    Map<String, dynamic> values,
+  );
+
+  Future<void> archiveRole(String id);
+
+  Future<Map<String, dynamic>> restoreRole(String id);
+
+  Future<void> deleteRoleRequest(String id);
 
   Future<List<Map<String, dynamic>>> ruleVersions();
 
@@ -87,6 +128,7 @@ abstract interface class AnalysisJobRepository {
     required String roleSlug,
     String? seniority,
     required bool consent,
+    required String captchaToken,
   });
 
   Future<AnalysisJobStatus> status(String handle);

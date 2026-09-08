@@ -401,7 +401,7 @@ Accept only:
 - Industry/context: optional, length-limited.
 - Desired skills or requirements: optional, length-limited.
 - Reply email: optional and validated.
-- Anti-spam proof: honeypot plus server-side rate limiting and CAPTCHA/equivalent if configured.
+- Anti-spam proof: honeypot plus server-side rate limiting and required Google reCAPTCHA v2 verification.
 
 Do not accept attachments, CV text, PDFs, job-description files, or visitor accounts. Submit the small, validated form only to the same-origin application route. Return a neutral success response that does not expose internal workflow details.
 
@@ -963,7 +963,7 @@ Keep these values server-side and document them in <code>.env.example</code>:
 - <code>ADMIN_INITIAL_USERNAME</code>
 - <code>ADMIN_INITIAL_PASSWORD</code>
 - session lifetime, idle timeout, cookie name, and rate-limit settings
-- optional CAPTCHA verification secrets
+- Google reCAPTCHA v2 site key, server-only secret, and verification URL
 
 The initial seed defaults are <code>ADMIN_INITIAL_USERNAME=rameshwx</code> and <code>ADMIN_INITIAL_PASSWORD=rameshwx</code> when the database is empty and no override is supplied. These values are never sent to the client. The seed must be idempotent and must never overwrite an existing username, password hash, or credential-change state.
 
@@ -1282,7 +1282,7 @@ Provide a root <code>.env.example</code> and document the following production v
 - administrator session lifetime and idle timeout
 - cookie name and secure-cookie flags
 - rate-limit settings
-- optional CAPTCHA verification secret
+- Google reCAPTCHA v2 site key, server-only secret, and verification URL
 
 The default first initialization values are <code>rameshwx</code>/<code>rameshwx</code>. Treat them as sensitive even though they are specified by this product requirement. Never commit them as a password hash or expose them in the browser. After the first login, change them from <code>/admin/account</code>.
 

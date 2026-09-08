@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/providers.dart';
+import '../../../core/network/app_http_client.dart';
 import '../authentication/admin_session_view_model.dart';
 
 class AdminDashboardPage extends StatelessWidget {
@@ -518,11 +519,7 @@ class _SectionContent extends ConsumerWidget {
     'dashboard' => _DashboardContent(
       repository: ref.watch(adminRepositoryProvider),
     ),
-    'roles' => _ListContent(
-      title: 'Active and archived job roles',
-      kind: _ListKind.roles,
-      future: ref.watch(adminRepositoryProvider).roles(),
-    ),
+    'roles' => _RolesContent(repository: ref.watch(adminRepositoryProvider)),
     'rule-versions' => _ListContent(
       title: 'Draft and published rule versions',
       kind: _ListKind.versions,
@@ -887,6 +884,394 @@ class _AdminDashboardNotes extends StatelessWidget {
   );
 }
 
+class _RolesContent extends StatefulWidget {
+  const _RolesContent({required this.repository});
+
+  final dynamic repository;
+
+  @override
+  State<_RolesContent> createState() => _RolesContentState();
+}
+
+class _RolesContentState extends State<_RolesContent> {
+  late Future<List<Map<String, dynamic>>> future;
+  String query = '';
+  bool activeOnly = false;
+
+  @override
+  void initState() {
+    super.initState();
+    future = widget.repository.roles();
+  }
+
+  void _reload() {
+    setState(() => future = widget.repository.roles());
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      FutureBuilder<List<Map<String, dynamic>>>(
+        future: future,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return _AdminMessage(
+              message: 'Roles unavailable: ${snapshot.error}',
+              error: true,
+            );
+          }
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final items = snapshot.data!.where(_matches).toList();
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Align(
+                alignment: Alignment.centerRight,
+                child: FilledButton.icon(
+                  onPressed: () => _showRoleDialog(context),
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('Add role'),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          onChanged: (value) => setState(() => query = value),
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            hintText: 'Search by title, ID, or slug',
+                            prefixIcon: Icon(Icons.search),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      FilterChip(
+                        label: const Text('Active only'),
+                        selected: activeOnly,
+                        onSelected: (value) =>
+                            setState(() => activeOnly = value),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              if (items.isEmpty)
+                const _EmptyAdmin(message: 'No roles match this filter.')
+              else
+                ...items.map(
+                  (item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _RoleAdminCard(
+                      item: item,
+                      onEdit: () => _showRoleDialog(context, item: item),
+                      onToggle: () => _toggleRole(item),
+                      onArchive: () => _archiveRole(item),
+                      onRestore: () => _restoreRole(item),
+                    ),
+                  ),
+                ),
+              Text(
+                'Showing ${items.length} of ${snapshot.data!.length} roles',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          );
+        },
+      );
+
+  bool _matches(Map<String, dynamic> item) {
+    final searchable = item.values.join(' ').toLowerCase();
+    final queryMatch =
+        query.trim().isEmpty || searchable.contains(query.trim().toLowerCase());
+    final activeMatch = !activeOnly || item['active'] == true;
+    return queryMatch && activeMatch;
+  }
+
+  Future<void> _showRoleDialog(
+    BuildContext context, {
+    Map<String, dynamic>? item,
+  }) async {
+    final slug = TextEditingController(text: '${item?['slug'] ?? ''}');
+    final title = TextEditingController(text: '${item?['title'] ?? ''}');
+    final description = TextEditingController(
+      text: '${item?['description'] ?? ''}',
+    );
+    final messenger = ScaffoldMessenger.of(context);
+    final values = await showDialog<Map<String, String>>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(item == null ? 'Add role' : 'Edit role'),
+        content: SizedBox(
+          width: 460,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: slug,
+                decoration: const InputDecoration(labelText: 'Slug'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: title,
+                decoration: const InputDecoration(labelText: 'Title'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: description,
+                maxLines: 3,
+                decoration: const InputDecoration(labelText: 'Description'),
+              ),
+              if (item == null) ...[
+                const SizedBox(height: 12),
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'New roles start inactive until published rules are available.',
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (slug.text.trim().isEmpty || title.text.trim().isEmpty) return;
+              Navigator.pop(dialogContext, {
+                'slug': slug.text.trim(),
+                'title': title.text.trim(),
+                'description': description.text.trim(),
+              });
+            },
+            child: Text(item == null ? 'Add role' : 'Save changes'),
+          ),
+        ],
+      ),
+    );
+    slug.dispose();
+    title.dispose();
+    description.dispose();
+    if (values == null || !mounted) return;
+    try {
+      if (item == null) {
+        await widget.repository.createRole(
+          slug: values['slug']!,
+          title: values['title']!,
+          description: values['description']!,
+        );
+      } else {
+        await widget.repository.updateRole('${item['id']}', values);
+      }
+      if (!mounted) return;
+      _reload();
+      messenger.showSnackBar(
+        SnackBar(content: Text(item == null ? 'Role added.' : 'Role updated.')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text('$error')));
+    }
+  }
+
+  Future<void> _toggleRole(Map<String, dynamic> item) async {
+    final active = item['active'] == true;
+    if (!active && item['hasPublishedRules'] != true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Publish a rule version before activating this role.'),
+        ),
+      );
+      return;
+    }
+    try {
+      await widget.repository.updateRole('${item['id']}', {'active': !active});
+      if (mounted) _reload();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('$error')));
+    }
+  }
+
+  Future<void> _archiveRole(Map<String, dynamic> item) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Archive role?'),
+        content: Text(
+          'Archive “${item['title'] ?? 'this role'}” from the public catalog?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Archive'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      await widget.repository.archiveRole('${item['id']}');
+      if (mounted) _reload();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('$error')));
+    }
+  }
+
+  Future<void> _restoreRole(Map<String, dynamic> item) async {
+    try {
+      await widget.repository.restoreRole('${item['id']}');
+      if (mounted) _reload();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('$error')));
+    }
+  }
+}
+
+class _RoleAdminCard extends StatelessWidget {
+  const _RoleAdminCard({
+    required this.item,
+    required this.onEdit,
+    required this.onToggle,
+    required this.onArchive,
+    required this.onRestore,
+  });
+
+  final Map<String, dynamic> item;
+  final VoidCallback onEdit;
+  final VoidCallback onToggle;
+  final VoidCallback onArchive;
+  final VoidCallback onRestore;
+
+  @override
+  Widget build(BuildContext context) {
+    final archived = item['archived_at'] != null;
+    final active = item['active'] == true;
+    final hasRules = item['hasPublishedRules'] == true;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(
+              radius: 21,
+              backgroundColor: ReadyMyCvColors.blueSoft,
+              foregroundColor: ReadyMyCvColors.blue,
+              child: Text(
+                '${item['id'] ?? '—'}',
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: [
+                      Text(
+                        '${item['title'] ?? 'Untitled role'}',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      StatusBadge(
+                        label: archived
+                            ? 'Archived'
+                            : active
+                            ? 'Active'
+                            : 'Inactive',
+                        color: archived
+                            ? ReadyMyCvColors.muted
+                            : active
+                            ? ReadyMyCvColors.green
+                            : ReadyMyCvColors.amber,
+                        backgroundColor: archived
+                            ? ReadyMyCvColors.surface
+                            : active
+                            ? ReadyMyCvColors.greenSoft
+                            : ReadyMyCvColors.amberSoft,
+                      ),
+                      StatusBadge(
+                        label: hasRules ? 'Rules published' : 'Needs rules',
+                        color: hasRules
+                            ? ReadyMyCvColors.green
+                            : ReadyMyCvColors.amber,
+                        backgroundColor: hasRules
+                            ? ReadyMyCvColors.greenSoft
+                            : ReadyMyCvColors.amberSoft,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 5),
+                  Text('${item['description'] ?? 'No description provided.'}'),
+                  const SizedBox(height: 7),
+                  Text(
+                    'slug: ${item['slug'] ?? '—'}',
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      color: ReadyMyCvColors.muted,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            PopupMenuButton<String>(
+              tooltip: 'Role actions',
+              onSelected: (value) => switch (value) {
+                'edit' => onEdit(),
+                'toggle' => onToggle(),
+                'archive' => onArchive(),
+                'restore' => onRestore(),
+                _ => null,
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(value: 'edit', child: Text('Edit role')),
+                if (!archived)
+                  PopupMenuItem(
+                    value: 'toggle',
+                    child: Text(active ? 'Deactivate' : 'Activate'),
+                  ),
+                if (archived)
+                  const PopupMenuItem(value: 'restore', child: Text('Restore'))
+                else
+                  const PopupMenuItem(value: 'archive', child: Text('Archive')),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 enum _ListKind { roles, versions, audit }
 
 class _ListContent extends StatefulWidget {
@@ -1210,6 +1595,7 @@ class _RoleRequestsContent extends StatefulWidget {
 
 class _RoleRequestsContentState extends State<_RoleRequestsContent> {
   String query = '';
+  final deleting = <String>{};
 
   @override
   Widget build(
@@ -1270,10 +1656,30 @@ class _RoleRequestsContentState extends State<_RoleRequestsContent> {
                     subtitle: Text(
                       '${item['seniority'] ?? 'Seniority not provided'} • ${item['industry'] ?? 'Industry not provided'}\n${item['created_at'] ?? 'Unknown time'}',
                     ),
-                    trailing: StatusBadge(
-                      label: '${item['status'] ?? 'new'}',
-                      color: ReadyMyCvColors.blue,
-                      backgroundColor: ReadyMyCvColors.blueSoft,
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        StatusBadge(
+                          label: '${item['status'] ?? 'new'}',
+                          color: ReadyMyCvColors.blue,
+                          backgroundColor: ReadyMyCvColors.blueSoft,
+                        ),
+                        IconButton(
+                          tooltip: 'Delete request',
+                          onPressed: deleting.contains('${item['id']}')
+                              ? null
+                              : () => _deleteRequest(item),
+                          icon: deleting.contains('${item['id']}')
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.delete_outline),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -1287,6 +1693,47 @@ class _RoleRequestsContentState extends State<_RoleRequestsContent> {
       );
     },
   );
+
+  Future<void> _deleteRequest(Map<String, dynamic> item) async {
+    final id = '${item['id']}';
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete role request?'),
+        content: const Text('This permanently removes the selected request.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => deleting.add(id));
+    try {
+      await widget.repository.deleteRoleRequest(id);
+      if (mounted) setState(() => deleting.remove(id));
+    } on AppHttpException catch (error) {
+      if (!mounted) return;
+      setState(() => deleting.remove(id));
+      if (error.statusCode == 404) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('$error')));
+    } catch (error) {
+      if (mounted) {
+        setState(() => deleting.remove(id));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('$error')));
+      }
+    }
+  }
 }
 
 class _AccountContent extends ConsumerStatefulWidget {

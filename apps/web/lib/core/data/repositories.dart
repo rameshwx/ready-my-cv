@@ -15,27 +15,55 @@ class HttpCatalogRepository implements CatalogRepository {
   );
 }
 
+class HttpPublicConfigRepository implements PublicConfigRepository {
+  const HttpPublicConfigRepository(this.client);
+
+  final AppHttpClient client;
+
+  @override
+  Future<PublicConfig> fetch() async {
+    final json = Map<String, dynamic>.from(
+      await client.getJson('/app/config') as Map,
+    );
+    return PublicConfig(
+      donationUrl: json['donationUrl'] as String?,
+      adsEnabled: json['adsEnabled'] == true,
+      captchaSiteKey: (json['captchaSiteKey'] as String?)?.trim(),
+    );
+  }
+}
+
 class HttpRoleRequestRepository implements RoleRequestRepository {
   const HttpRoleRequestRepository(this.client);
 
   final AppHttpClient client;
 
   @override
-  Future<void> submit({
+  Future<RoleRequestSubmission> submit({
     required String roleTitle,
     String? seniority,
     String? industry,
     String? desiredSkills,
     String? replyEmail,
+    required String captchaToken,
   }) async {
-    await client.postJson('/app/role-requests', {
-      'roleTitle': roleTitle,
-      if (seniority?.isNotEmpty == true) 'seniority': seniority,
-      if (industry?.isNotEmpty == true) 'industry': industry,
-      if (desiredSkills?.isNotEmpty == true) 'desiredSkills': desiredSkills,
-      if (replyEmail?.isNotEmpty == true) 'replyEmail': replyEmail,
-      'website': '',
-    });
+    final response = Map<String, dynamic>.from(
+      await client.postJson('/app/role-requests', {
+            'roleTitle': roleTitle,
+            if (seniority?.isNotEmpty == true) 'seniority': seniority,
+            if (industry?.isNotEmpty == true) 'industry': industry,
+            if (desiredSkills?.isNotEmpty == true)
+              'desiredSkills': desiredSkills,
+            if (replyEmail?.isNotEmpty == true) 'replyEmail': replyEmail,
+            'captchaToken': captchaToken,
+            'website': '',
+          })
+          as Map,
+    );
+    return RoleRequestSubmission(
+      accepted: response['accepted'] == true,
+      duplicate: response['duplicate'] == true,
+    );
   }
 }
 
@@ -113,6 +141,34 @@ class HttpAdminRepository implements AdminRepository {
       _items(await client.getJson('/app/admin/roles'));
 
   @override
+  Future<Map<String, dynamic>> createRole({
+    required String slug,
+    required String title,
+    required String description,
+  }) async => _map(
+    await client.postJson('/app/admin/roles', {
+      'slug': slug,
+      'title': title,
+      'description': description,
+    }),
+  );
+
+  @override
+  Future<Map<String, dynamic>> updateRole(
+    String id,
+    Map<String, dynamic> values,
+  ) async => _map(await client.patchJson('/app/admin/roles/$id', values));
+
+  @override
+  Future<void> archiveRole(String id) async {
+    await client.deleteJson('/app/admin/roles/$id');
+  }
+
+  @override
+  Future<Map<String, dynamic>> restoreRole(String id) async =>
+      _map(await client.postJson('/app/admin/roles/$id/restore', {}));
+
+  @override
   Future<List<Map<String, dynamic>>> ruleVersions() async =>
       _items(await client.getJson('/app/admin/rule-versions'));
 
@@ -139,6 +195,11 @@ class HttpAdminRepository implements AdminRepository {
   @override
   Future<void> updateRoleRequest(String id, String status) async {
     await client.patchJson('/app/admin/role-requests/$id', {'status': status});
+  }
+
+  @override
+  Future<void> deleteRoleRequest(String id) async {
+    await client.deleteJson('/app/admin/role-requests/$id');
   }
 
   @override
@@ -175,6 +236,7 @@ class HttpAnalysisJobRepository implements AnalysisJobRepository {
     required String roleSlug,
     String? seniority,
     required bool consent,
+    required String captchaToken,
   }) async {
     final response = Map<String, dynamic>.from(
       await client.postMultipart(
@@ -184,6 +246,7 @@ class HttpAnalysisJobRepository implements AnalysisJobRepository {
               'roleSlug': roleSlug,
               if (seniority != null) 'seniority': seniority,
               'consent': consent.toString(),
+              'captchaToken': captchaToken,
             },
           )
           as Map,

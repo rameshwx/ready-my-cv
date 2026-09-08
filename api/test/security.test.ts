@@ -36,6 +36,13 @@ test('analysis migration contains encrypted temporary queue storage and no visit
   assert.doesNotMatch(sql, /filename|raw_ip|document_hash|visitor_id|cv_text/i);
 });
 
+test('role-request migration contains short-window dedupe storage and RLS lookup context', async () => {
+  const sql = await readFile(new URL('../migrations/003_role_request_dedupe.sql', import.meta.url), 'utf8');
+  assert.match(sql, /dedupe_hash/);
+  assert.match(sql, /role_requests_dedupe_lookup/);
+  assert.match(sql, /app\.role_request/);
+});
+
 test('server contains no JWT or CV upload endpoints and uses session cookies', async () => {
   const app = await readFile(new URL('../src/app.ts', import.meta.url), 'utf8');
   const auth = await readFile(new URL('../src/modules/auth/routes.ts', import.meta.url), 'utf8');
@@ -58,10 +65,13 @@ test('CSP allows only the trusted Flutter and Cloudflare runtime origins', async
   const fontSrc = directive('fontSrc');
   assert.match(scriptSrc, /https:\/\/static\.cloudflareinsights\.com/);
   assert.match(scriptSrc, /https:\/\/www\.gstatic\.com/);
+  assert.match(scriptSrc, /https:\/\/www\.google\.com\/recaptcha\//);
   assert.doesNotMatch(scriptSrc, /unsafe-inline|https:\/\/\*/);
   assert.match(connectSrc, /https:\/\/cloudflareinsights\.com/);
   assert.match(connectSrc, /https:\/\/www\.gstatic\.com/);
   assert.match(connectSrc, /https:\/\/fonts\.gstatic\.com/);
+  assert.match(connectSrc, /https:\/\/www\.google\.com\/recaptcha\//);
   assert.doesNotMatch(connectSrc, /https:\/\/\*/);
   assert.match(fontSrc, /https:\/\/fonts\.gstatic\.com/);
+  assert.match(app, /frameSrc: \['https:\/\/www\.google\.com\/recaptcha\/'\]/);
 });

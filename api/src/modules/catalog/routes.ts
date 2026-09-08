@@ -2,17 +2,25 @@ import type { FastifyInstance } from 'fastify';
 import type { PoolClient } from 'pg';
 import { z } from 'zod';
 
+import { config } from '../../config.js';
 import { pool } from '../../db/pool.js';
 import { withAdminTransaction } from '../../shared/db-context.js';
 import { errorEnvelope, sendError } from '../../shared/errors.js';
 import { authenticate } from '../auth/service.js';
 
-const roleInput = z.object({
+const createRoleInput = z.object({
   slug: z.string().regex(/^[a-z0-9-]{2,80}$/),
   title: z.string().trim().min(2).max(120),
   description: z.string().max(500),
-  active: z.boolean().default(true),
+  active: z.boolean().optional(),
 }).strict();
+
+const updateRoleInput = z.object({
+  slug: z.string().regex(/^[a-z0-9-]{2,80}$/),
+  title: z.string().trim().min(2).max(120),
+  description: z.string().max(500),
+  active: z.boolean(),
+}).partial().strict();
 
 const settingsInput = z.object({
   donationUrl: z.string().url().max(500).nullable().optional(),
@@ -95,37 +103,95 @@ export async function registerCatalogRoutes(app: FastifyInstance) {
 
   app.get('/app/config', async () => {
     const result = await pool.query('SELECT donation_url AS "donationUrl", ads_enabled AS "adsEnabled" FROM site_settings WHERE id = 1');
-    return result.rows[0] ?? { donationUrl: null, adsEnabled: false };
+    return {
+      ...(result.rows[0] ?? { donationUrl: null, adsEnabled: false }),
+      captchaSiteKey: config.CAPTCHA_SITE_KEY ?? null,
+    };
   });
 
   app.register(async (scope) => {
     scope.addHook('preHandler', authenticate);
-    scope.get('/app/admin/roles', async () => withAdminTransaction(async (client) => ({ items: (await client.query('SELECT id, slug, title, description, active, archived_at, created_at, updated_at FROM job_roles ORDER BY title')).rows })));
+    scope.get('/app/admin/roles', async () => withAdminTransaction(async (client) => ({ items: (await client.query(
+      `SELECT r.id, r.slug, r.title, r.description, r.active, r.archived_at, r.created_at, r.updated_at,
+              EXISTS (SELECT 1 FROM role_rule_versions v WHERE v.job_role_id = r.id AND v.status = 'published') AS "hasPublishedRules"
+       FROM job_roles r ORDER BY r.title`,
+    )).rows })));
     scope.post('/app/admin/roles', async (request, reply) => {
-      const parsed = roleInput.safeParse(request.body);
+      const parsed = createRoleInput.safeParse(request.body);
       if (!parsed.success) return reply.code(400).send(errorEnvelope('VALIDATION_ERROR', 'One or more fields are invalid.'));
       return withAdminTransaction(async (client) => {
         const result = await client.query(
-          `INSERT INTO job_roles(slug, title, description, active) VALUES ($1, $2, $3, $4)
-           RETURNING id, slug, title, description, active`,
-          [parsed.data.slug, parsed.data.title, parsed.data.description, parsed.data.active],
+          `INSERT INTO job_roles(slug, title, description, active) VALUES ($1, $2, $3, false)
+           RETURNING id, slug, title, description, active, archived_at`,
+          [parsed.data.slug, parsed.data.title, parsed.data.description],
         );
         await client.query(`INSERT INTO audit_logs(action, summary) VALUES ('role_created', $1::jsonb)`, [JSON.stringify({ roleId: result.rows[0].id })]);
         return reply.code(201).send(result.rows[0]);
       });
     });
     scope.patch('/app/admin/roles/:id', async (request, reply) => {
-      const parsed = roleInput.partial().safeParse(request.body);
+      const parsed = updateRoleInput.safeParse(request.body);
       if (!parsed.success) return reply.code(400).send(errorEnvelope('VALIDATION_ERROR', 'One or more fields are invalid.'));
+      if (Object.keys(parsed.data).length === 0) return reply.code(400).send(errorEnvelope('VALIDATION_ERROR', 'At least one role field is required.'));
       const id = Number((request.params as { id: string }).id);
       if (!Number.isSafeInteger(id)) return sendError(reply, 400, 'VALIDATION_ERROR', 'Role ID is invalid.');
       return withAdminTransaction(async (client) => {
+        const current = await client.query(
+          `SELECT archived_at,
+                  EXISTS (SELECT 1 FROM role_rule_versions v WHERE v.job_role_id = job_roles.id AND v.status = 'published') AS "hasPublishedRules"
+           FROM job_roles WHERE id = $1`,
+          [id],
+        );
+        if (!current.rowCount) return sendError(reply, 404, 'NOT_FOUND', 'Role not found.');
+        if (parsed.data.active === true && current.rows[0].archived_at) {
+          return sendError(reply, 409, 'ROLE_ARCHIVED', 'Restore the role before activating it.');
+        }
+        if (parsed.data.active === true && !current.rows[0].hasPublishedRules) {
+          return sendError(reply, 409, 'ROLE_NOT_READY', 'A published rule version is required before activation.');
+        }
         const result = await client.query(
           `UPDATE job_roles SET slug = COALESCE($1, slug), title = COALESCE($2, title), description = COALESCE($3, description), active = COALESCE($4, active), updated_at = now()
            WHERE id = $5 RETURNING id, slug, title, description, active`,
           [parsed.data.slug, parsed.data.title, parsed.data.description, parsed.data.active, id],
         );
+        await client.query(`INSERT INTO audit_logs(action, summary) VALUES ($1, $2::jsonb)`, [
+          parsed.data.active === true ? 'role_activated' : parsed.data.active === false ? 'role_deactivated' : 'role_updated',
+          JSON.stringify({ roleId: id }),
+        ]);
+        return reply.send(result.rows[0]);
+      });
+    });
+    scope.delete('/app/admin/roles/:id', async (request, reply) => {
+      const id = Number((request.params as { id: string }).id);
+      if (!Number.isSafeInteger(id)) return sendError(reply, 400, 'VALIDATION_ERROR', 'Role ID is invalid.');
+      return withAdminTransaction(async (client) => {
+        const result = await client.query(
+          `UPDATE job_roles
+           SET active = false, archived_at = COALESCE(archived_at, now()), updated_at = now()
+           WHERE id = $1
+           RETURNING id`,
+          [id],
+        );
         if (!result.rowCount) return sendError(reply, 404, 'NOT_FOUND', 'Role not found.');
+        await client.query(`INSERT INTO audit_logs(action, summary) VALUES ('role_archived', $1::jsonb)`, [JSON.stringify({ roleId: id })]);
+        return reply.send({ deleted: true, id });
+      });
+    });
+    scope.post('/app/admin/roles/:id/restore', async (request, reply) => {
+      if (request.body && typeof request.body === 'object' && Object.keys(request.body as object).length > 0) {
+        return sendError(reply, 400, 'VALIDATION_ERROR', 'The restore request is invalid.');
+      }
+      const id = Number((request.params as { id: string }).id);
+      if (!Number.isSafeInteger(id)) return sendError(reply, 400, 'VALIDATION_ERROR', 'Role ID is invalid.');
+      return withAdminTransaction(async (client) => {
+        const result = await client.query(
+          `UPDATE job_roles SET archived_at = NULL, active = false, updated_at = now()
+           WHERE id = $1 AND archived_at IS NOT NULL
+           RETURNING id, slug, title, description, active, archived_at`,
+          [id],
+        );
+        if (!result.rowCount) return sendError(reply, 404, 'NOT_FOUND', 'Archived role not found.');
+        await client.query(`INSERT INTO audit_logs(action, summary) VALUES ('role_restored', $1::jsonb)`, [JSON.stringify({ roleId: id })]);
         return reply.send(result.rows[0]);
       });
     });

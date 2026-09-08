@@ -15,6 +15,14 @@ AppHttpClient appHttpClient(Ref ref) {
   return client;
 }
 
+final publicConfigRepositoryProvider = Provider<PublicConfigRepository>(
+  (ref) => HttpPublicConfigRepository(ref.watch(appHttpClientProvider)),
+);
+
+final publicConfigProvider = FutureProvider.autoDispose<PublicConfig>(
+  (ref) => ref.watch(publicConfigRepositoryProvider).fetch(),
+);
+
 @riverpod
 CatalogRepository catalogRepository(Ref ref) =>
     HttpCatalogRepository(ref.watch(appHttpClientProvider));

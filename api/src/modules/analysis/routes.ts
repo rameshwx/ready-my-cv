@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { config } from '../../config.js';
 import { pool } from '../../db/pool.js';
+import { CaptchaError, verifyCaptcha } from '../../shared/captcha.js';
 import { errorEnvelope, sendError } from '../../shared/errors.js';
 import {
   attachEmail,
@@ -77,6 +78,7 @@ export async function registerAnalysisRoutes(app: FastifyInstance) {
         pollAfterMs: 1500,
       });
     } catch (error) {
+      if (error instanceof CaptchaError) return sendError(reply, error.code === 'CAPTCHA_UNAVAILABLE' ? 503 : 400, error.code, error.message);
       if (error instanceof JobServiceError) return sendError(reply, error.statusCode, error.code, error.message);
       if (isMultipartLimitError(error)) return sendError(reply, 413, 'FILE_TOO_LARGE', 'PDF files must be 10 MB or smaller.');
       return sendError(reply, 400, 'INVALID_UPLOAD', 'The upload could not be accepted.');
@@ -157,29 +159,6 @@ async function readUpload(request: FastifyRequest) {
 
 function isPdf(value: Buffer) {
   return value.length >= 5 && value.subarray(0, 5).toString('ascii') === '%PDF-';
-}
-
-async function verifyCaptcha(token?: string) {
-  const enabled = Boolean(config.CAPTCHA_SECRET || config.CAPTCHA_VERIFY_URL);
-  if (!enabled) {
-    if (token) throw new JobServiceError('CAPTCHA_INVALID', 'CAPTCHA verification is unavailable.', 400);
-    return;
-  }
-  if (!config.CAPTCHA_SECRET || !config.CAPTCHA_VERIFY_URL || !token || token.length > 4096) {
-    throw new JobServiceError('CAPTCHA_REQUIRED', 'CAPTCHA verification is required.', 400);
-  }
-  try {
-    const response = await fetch(config.CAPTCHA_VERIFY_URL, {
-      method: 'POST',
-      headers: { 'content-type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ secret: config.CAPTCHA_SECRET, response: token }),
-      signal: AbortSignal.timeout(5000),
-    });
-    const payload = await response.json() as { success?: boolean };
-    if (!response.ok || payload.success !== true) throw new Error('CAPTCHA rejected.');
-  } catch {
-    throw new JobServiceError('CAPTCHA_INVALID', 'CAPTCHA verification failed.', 400);
-  }
 }
 
 async function waitForFastResult(handle: string) {

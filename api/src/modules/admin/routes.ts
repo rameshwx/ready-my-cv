@@ -49,6 +49,17 @@ export async function registerAdminRoutes(app: FastifyInstance) {
       });
     });
 
+    scope.delete('/app/admin/role-requests/:id', async (request, reply) => {
+      const id = Number((request.params as { id: string }).id);
+      if (!Number.isSafeInteger(id)) return sendError(reply, 400, 'VALIDATION_ERROR', 'Role request ID is invalid.');
+      return withAdminTransaction(async (client) => {
+        const result = await client.query('DELETE FROM role_requests WHERE id = $1 RETURNING id', [id]);
+        if (!result.rowCount) return sendError(reply, 404, 'NOT_FOUND', 'Role request not found.');
+        await client.query(`INSERT INTO audit_logs(action, summary) VALUES ('role_request_deleted', $1::jsonb)`, [JSON.stringify({ requestId: id })]);
+        return reply.send({ deleted: true, id });
+      });
+    });
+
     scope.get('/app/admin/audit-logs', async () => withAdminTransaction(async (client) => ({
       items: (await client.query('SELECT id, action, summary, created_at FROM audit_logs ORDER BY created_at DESC LIMIT 200')).rows,
     })));

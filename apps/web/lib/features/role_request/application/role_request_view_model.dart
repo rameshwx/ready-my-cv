@@ -9,19 +9,24 @@ class RoleRequestViewModel extends _$RoleRequestViewModel {
   @override
   String? build() => null;
 
-  Future<void> submit({
+  Future<bool> submit({
     required String title,
     String? seniority,
     String? industry,
     String? desiredSkills,
     String? replyEmail,
+    required String? captchaToken,
   }) async {
     if (title.trim().length < 2) {
       state = 'Please enter a valid role title.';
-      return;
+      return false;
+    }
+    if (captchaToken == null || captchaToken.isEmpty) {
+      state = 'Please complete the CAPTCHA verification.';
+      return false;
     }
     try {
-      await ref
+      final result = await ref
           .read(roleRequestRepositoryProvider)
           .submit(
             roleTitle: title.trim(),
@@ -29,10 +34,15 @@ class RoleRequestViewModel extends _$RoleRequestViewModel {
             industry: industry?.trim(),
             desiredSkills: desiredSkills?.trim(),
             replyEmail: replyEmail?.trim(),
+            captchaToken: captchaToken,
           );
-      state = 'Thank you. Your request was received.';
+      state = result.duplicate
+          ? 'Thank you. This request was already received recently.'
+          : 'Thank you. Your request was received.';
+      return result.accepted;
     } catch (_) {
       state = 'Please try again later.';
+      return false;
     }
   }
 }

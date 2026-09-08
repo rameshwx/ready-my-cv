@@ -58,12 +58,19 @@ class ScanViewModel extends _$ScanViewModel {
     if (!state.busy) state = state.copyWith(stage: ScanStage.idle);
   }
 
-  Future<void> analyze(Uint8List bytes) async {
+  Future<void> analyze(Uint8List bytes, {required String? captchaToken}) async {
     final role = state.role;
     if (role == null || state.busy) return;
     if (!state.consentGiven) {
       state = state.copyWith(
         errorMessage: 'Please accept the consent notice before uploading.',
+      );
+      return;
+    }
+    if (captchaToken == null || captchaToken.isEmpty) {
+      state = state.copyWith(
+        errorMessage:
+            'Please complete the CAPTCHA verification before uploading.',
       );
       return;
     }
@@ -108,6 +115,7 @@ class ScanViewModel extends _$ScanViewModel {
             roleSlug: role.slug,
             seniority: state.seniority,
             consent: true,
+            captchaToken: captchaToken,
           );
       cancellation.throwIfCancelled();
       if (upload.mode == 'terminal') {

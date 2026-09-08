@@ -46,6 +46,12 @@ export const withAnalysisTransaction = <T>(callback: (client: PoolClient) => Pro
     analysis_worker: 'false',
   });
 
+export const withRoleRequestTransaction = <T>(callback: (client: PoolClient) => Promise<T>) =>
+  withContextTransaction(callback, {
+    admin_authenticated: 'false',
+    role_request: 'true',
+  });
+
 export const withWorkerTransaction = <T>(callback: (client: PoolClient) => Promise<T>) =>
   withContextTransaction(callback, {
     admin_authenticated: 'false',

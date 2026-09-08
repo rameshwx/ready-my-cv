@@ -18,10 +18,30 @@ void main() {
     addTearDown(container.dispose);
     final notifier = container.read(scanViewModelProvider.notifier);
     notifier.chooseRole(_role, 'senior');
-    await notifier.analyze(Uint8List.fromList(_pdfBytes));
+    await notifier.analyze(
+      Uint8List.fromList(_pdfBytes),
+      captchaToken: 'test-token',
+    );
     expect(
       container.read(scanViewModelProvider).errorMessage,
       contains('consent'),
+    );
+    expect(repository.uploads, 0);
+  });
+
+  test('CAPTCHA is required before the backend repository is called', () async {
+    final repository = _FakeAnalysisRepository();
+    final container = ProviderContainer(
+      overrides: [analysisJobRepositoryProvider.overrideWithValue(repository)],
+    );
+    addTearDown(container.dispose);
+    final notifier = container.read(scanViewModelProvider.notifier);
+    notifier.chooseRole(_role, 'senior');
+    notifier.setConsent(true);
+    await notifier.analyze(Uint8List.fromList(_pdfBytes), captchaToken: null);
+    expect(
+      container.read(scanViewModelProvider).errorMessage,
+      contains('CAPTCHA'),
     );
     expect(repository.uploads, 0);
   });
@@ -40,9 +60,10 @@ void main() {
       notifier.chooseRole(_role, 'senior');
       notifier.setConsent(true);
       final bytes = Uint8List.fromList(_pdfBytes);
-      await notifier.analyze(bytes);
+      await notifier.analyze(bytes, captchaToken: 'test-token');
       final state = container.read(scanViewModelProvider);
       expect(repository.uploads, 1);
+      expect(repository.captchaToken, 'test-token');
       expect(bytes.every((value) => value == 0), true);
       expect(state.stage, ScanStage.completed);
       expect(state.result?.verification.valid, true);
@@ -94,6 +115,7 @@ const _pdfBytes = [37, 80, 68, 70, 45, 49, 46, 55];
 
 class _FakeAnalysisRepository implements AnalysisJobRepository {
   int uploads = 0;
+  String? captchaToken;
 
   @override
   Future<AnalysisUpload> upload({
@@ -101,8 +123,10 @@ class _FakeAnalysisRepository implements AnalysisJobRepository {
     required String roleSlug,
     String? seniority,
     required bool consent,
+    required String captchaToken,
   }) async {
     uploads += 1;
+    this.captchaToken = captchaToken;
     return AnalysisUpload(
       handle: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
       status: 'completed',

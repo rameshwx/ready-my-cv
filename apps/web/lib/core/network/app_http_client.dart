@@ -33,6 +33,14 @@ class AppHttpClient {
     return _decode(response);
   }
 
+  Future<dynamic> deleteJson(String path) async {
+    final response = await _client.delete(
+      Uri.parse(path),
+      headers: {'content-type': 'application/json'},
+    );
+    return _decode(response);
+  }
+
   Future<dynamic> postMultipart({
     required String path,
     required List<int> bytes,
