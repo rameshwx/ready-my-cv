@@ -11,14 +11,11 @@ void main() {
   ) async {
     await tester.pumpWidget(const ProviderScope(child: ReadyMyCvApp()));
     await tester.pumpAndSettle();
-    expect(find.textContaining('browser'), findsWidgets);
+    expect(find.textContaining('temporary server processing'), findsOneWidget);
 
     await tester.tap(find.text('Check my CV'));
     await tester.pumpAndSettle();
-    expect(
-      find.textContaining('Your CV is read privately in this browser.'),
-      findsOneWidget,
-    );
-    expect(find.textContaining('never leaves this browser'), findsWidgets);
+    expect(find.textContaining('To support more PDF formats'), findsOneWidget);
+    expect(find.textContaining('secure server for processing'), findsOneWidget);
   });
 }
