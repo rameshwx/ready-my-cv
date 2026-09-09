@@ -601,7 +601,7 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                                                           CaptchaRenderStatus
                                                               .blocked
                                                       ? captchaBlockedNotice
-                                                      : captchaError;
+                                                      : null;
                                                 });
                                               },
                                             ),

@@ -1,15 +1,34 @@
 enum CaptchaRenderStatus { loading, ready, blocked }
 
+CaptchaRenderStatus captchaRenderStatusFromBridgeValue(Object? value) {
+  return switch (value) {
+    'loading' => CaptchaRenderStatus.loading,
+    'ready' => CaptchaRenderStatus.ready,
+    _ => CaptchaRenderStatus.blocked,
+  };
+}
+
+typedef CaptchaTokenReader = String? Function();
+
 class CaptchaChallengeController {
-  String? Function()? _readToken;
+  CaptchaTokenReader? _readToken;
+  Object? _binding;
 
   String? readToken() => _readToken?.call();
 
-  void bind(String? Function() reader) {
+  void Function() bind(CaptchaTokenReader reader) {
+    final binding = Object();
+    _binding = binding;
     _readToken = reader;
-  }
 
-  void unbind() {
-    _readToken = null;
+    var active = true;
+    return () {
+      if (!active) return;
+      active = false;
+      if (identical(_binding, binding)) {
+        _binding = null;
+        _readToken = null;
+      }
+    };
   }
 }
