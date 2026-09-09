@@ -18,6 +18,41 @@ const privacyNotice =
     'To support more PDF formats, your CV will be temporarily uploaded to our secure server for processing. The uploaded file, extracted text, analysis report, and any email address you provide will be deleted after processing and report delivery. We do not use your CV for training, advertising, or other purposes.';
 const captchaBlockedNotice =
     'CAPTCHA could not load. Disable content blockers and reload this page.';
+const _maxPdfBytes = 10 * 1024 * 1024;
+
+/// Testable boundary around the browser file picker.
+abstract interface class PdfPicker {
+  Future<PickedPdf?> pick();
+}
+
+class PickedPdf {
+  const PickedPdf({required this.name, required this.bytes});
+
+  final String name;
+  final Uint8List? bytes;
+}
+
+class PlatformPdfPicker implements PdfPicker {
+  const PlatformPdfPicker();
+
+  @override
+  Future<PickedPdf?> pick() async {
+    final picked = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf'],
+      withData: true,
+    );
+    if (picked == null) return null;
+
+    final file = picked.files.single;
+    final sourceBytes = file.bytes;
+    final bytes = sourceBytes == null ? null : Uint8List.fromList(sourceBytes);
+    if (sourceBytes != null) {
+      sourceBytes.fillRange(0, sourceBytes.length, 0);
+    }
+    return PickedPdf(name: file.name, bytes: bytes);
+  }
+}
 
 class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.child});
@@ -454,7 +489,14 @@ class _TrustCard extends StatelessWidget {
 }
 
 class ScanPage extends ConsumerStatefulWidget {
-  const ScanPage({super.key});
+  const ScanPage({
+    super.key,
+    this.filePicker = const PlatformPdfPicker(),
+    this.captchaController,
+  });
+
+  final PdfPicker filePicker;
+  final CaptchaChallengeController? captchaController;
 
   @override
   ConsumerState<ScanPage> createState() => _ScanPageState();
@@ -462,13 +504,28 @@ class ScanPage extends ConsumerStatefulWidget {
 
 class _ScanPageState extends ConsumerState<ScanPage> {
   final emailController = TextEditingController();
+  late final CaptchaChallengeController captchaController;
+  Uint8List? _pendingPdfBytes;
+  String? _pendingPdfName;
+  int? _pendingPdfSize;
+  String? _fileSelectionError;
+  bool _isPicking = false;
+  bool _analysisInProgress = false;
   String? captchaToken;
   CaptchaRenderStatus captchaStatus = CaptchaRenderStatus.loading;
   String? captchaError;
   int captchaGeneration = 0;
 
   @override
+  void initState() {
+    super.initState();
+    captchaController =
+        widget.captchaController ?? CaptchaChallengeController();
+  }
+
+  @override
   void dispose() {
+    _discardPendingPdf();
     emailController.dispose();
     super.dispose();
   }
@@ -477,6 +534,7 @@ class _ScanPageState extends ConsumerState<ScanPage> {
   Widget build(BuildContext context) {
     final catalog = ref.watch(publishedCatalogProvider);
     final scan = ref.watch(scanViewModelProvider);
+    final hasCaptchaToken = _hasCaptchaToken;
     return PopScope<void>(
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) ref.read(scanViewModelProvider.notifier).cancel();
@@ -516,7 +574,8 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                             contentPadding: EdgeInsets.zero,
                             value: scan.consentGiven,
                             onChanged:
-                                scan.busy ||
+                                _analysisInProgress ||
+                                    scan.busy ||
                                     scan.stage == ScanStage.awaitingEmail
                                 ? null
                                 : (value) {
@@ -525,6 +584,7 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                                         .read(scanViewModelProvider.notifier)
                                         .setConsent(consent);
                                     if (!consent) {
+                                      _discardPendingPdf();
                                       setState(() {
                                         captchaToken = null;
                                         captchaError = null;
@@ -575,8 +635,10 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                                             CaptchaChallenge(
                                               key: ValueKey(captchaGeneration),
                                               siteKey: config.captchaSiteKey!,
+                                              controller: captchaController,
                                               onTokenChanged: (token) {
-                                                if (mounted) {
+                                                if (mounted &&
+                                                    !_analysisInProgress) {
                                                   setState(() {
                                                     captchaToken = token;
                                                     if (token?.isNotEmpty ==
@@ -587,7 +649,10 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                                                 }
                                               },
                                               onStatusChanged: (status) {
-                                                if (!mounted) return;
+                                                if (!mounted ||
+                                                    _analysisInProgress) {
+                                                  return;
+                                                }
                                                 setState(() {
                                                   captchaStatus = status;
                                                   captchaError =
@@ -646,10 +711,11 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                                     )
                                     .toList(),
                                 onChanged:
-                                    scan.busy ||
+                                    _analysisInProgress ||
+                                        scan.busy ||
                                         scan.stage == ScanStage.awaitingEmail ||
                                         !scan.consentGiven ||
-                                        captchaToken?.isNotEmpty != true
+                                        !hasCaptchaToken
                                     ? null
                                     : (role) {
                                         if (role == null) return;
@@ -684,10 +750,11 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                                   )
                                   .toList(),
                               onChanged:
-                                  scan.busy ||
+                                  _analysisInProgress ||
+                                      scan.busy ||
                                       scan.stage == ScanStage.awaitingEmail ||
                                       !scan.consentGiven ||
-                                      captchaToken?.isNotEmpty != true
+                                      !hasCaptchaToken
                                   ? null
                                   : (value) {
                                       if (value != null) {
@@ -705,13 +772,15 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                           const SizedBox(height: 10),
                           InkWell(
                             onTap:
-                                scan.busy ||
+                                _analysisInProgress ||
+                                    _isPicking ||
+                                    scan.busy ||
                                     scan.stage == ScanStage.awaitingEmail ||
                                     scan.role == null ||
                                     !scan.consentGiven ||
-                                    captchaToken?.isNotEmpty != true
+                                    !hasCaptchaToken
                                 ? null
-                                : () => _pick(context, ref),
+                                : _pick,
                             borderRadius: BorderRadius.circular(14),
                             child: Container(
                               width: double.infinity,
@@ -739,18 +808,32 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                                     ),
                                   ),
                                   const SizedBox(height: 12),
-                                  Text(
-                                    !scan.consentGiven
-                                        ? 'Accept the processing notice first'
-                                        : captchaToken?.isNotEmpty != true
-                                        ? 'Complete CAPTCHA first'
-                                        : scan.role == null
-                                        ? 'Choose a role first'
-                                        : 'Select a PDF to begin',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w700,
+                                  if (_pendingPdfName != null) ...[
+                                    Text(
+                                      '${_pendingPdfName!} • ${_formatFileSize(_pendingPdfSize!)}',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                     ),
-                                  ),
+                                    const SizedBox(height: 5),
+                                    const Text(
+                                      'PDF selected. Click Start Scan when ready.',
+                                    ),
+                                  ] else
+                                    Text(
+                                      !scan.consentGiven
+                                          ? 'Accept the processing notice first'
+                                          : !hasCaptchaToken
+                                          ? 'Complete CAPTCHA first'
+                                          : scan.role == null
+                                          ? 'Choose a role first'
+                                          : 'Select a PDF to prepare your scan',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
                                   const SizedBox(height: 5),
                                   const Text(
                                     'PDF only • 10 MB maximum • up to 25 pages',
@@ -759,6 +842,33 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                               ),
                             ),
                           ),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: FilledButton.icon(
+                              onPressed: _canStartScan(scan)
+                                  ? () => _startScan(context, ref)
+                                  : null,
+                              icon: _analysisInProgress || scan.busy
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Icon(Icons.play_arrow_outlined),
+                              label: Text(
+                                _analysisInProgress || scan.busy
+                                    ? 'Starting scan…'
+                                    : 'Start Scan',
+                              ),
+                            ),
+                          ),
+                          if (_fileSelectionError != null) ...[
+                            const SizedBox(height: 10),
+                            _InlineError(message: _fileSelectionError!),
+                          ],
                           const SizedBox(height: 20),
                           if (scan.errorMessage != null) ...[
                             const SizedBox(height: 8),
@@ -823,42 +933,150 @@ class _ScanPageState extends ConsumerState<ScanPage> {
     );
   }
 
-  Future<void> _pick(BuildContext context, WidgetRef ref) async {
-    final viewModel = ref.read(scanViewModelProvider.notifier);
-    viewModel.beginFileSelection();
-    final picked = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf'],
-      withData: true,
-    );
-    if (picked == null) {
-      viewModel.fileSelectionCancelled();
+  bool get _hasCaptchaToken =>
+      captchaToken?.isNotEmpty == true ||
+      captchaController.readToken()?.isNotEmpty == true;
+
+  bool _canStartScan(ScanState scan) {
+    final role = scan.role;
+    final seniorityReady =
+        role == null || role.seniorities.isEmpty || scan.seniority != null;
+    return !_isPicking &&
+        !_analysisInProgress &&
+        !scan.busy &&
+        scan.stage != ScanStage.awaitingEmail &&
+        scan.consentGiven &&
+        _hasCaptchaToken &&
+        role != null &&
+        seniorityReady &&
+        _pendingPdfBytes != null;
+  }
+
+  Future<void> _pick() async {
+    if (_isPicking || _analysisInProgress) return;
+    setState(() {
+      _isPicking = true;
+      _fileSelectionError = null;
+    });
+
+    PickedPdf? picked;
+    var pickerFailed = false;
+    try {
+      picked = await widget.filePicker.pick();
+    } catch (_) {
+      pickerFailed = true;
+    }
+
+    if (!mounted) {
+      _zeroBytes(picked?.bytes);
       return;
     }
-    final bytes = picked.files.single.bytes;
-    if (bytes == null ||
-        picked.files.single.extension?.toLowerCase() != 'pdf' ||
-        !picked.files.single.name.toLowerCase().endsWith('.pdf')) {
-      if (bytes != null) bytes.fillRange(0, bytes.length, 0);
-      viewModel.fileSelectionCancelled();
-      return;
-    }
-    final uploadBytes = Uint8List.fromList(bytes);
-    bytes.fillRange(0, bytes.length, 0);
-    await viewModel.analyze(uploadBytes, captchaToken: captchaToken);
-    if (mounted) {
+    setState(() => _isPicking = false);
+
+    if (pickerFailed) {
       setState(() {
-        captchaToken = null;
-        captchaError = null;
-        captchaStatus = CaptchaRenderStatus.loading;
-        captchaGeneration++;
+        _fileSelectionError = 'The file picker could not be opened. Try again.';
       });
+      return;
     }
-    if (context.mounted &&
-        ref.read(scanViewModelProvider).stage == ScanStage.completed &&
-        ref.read(scanViewModelProvider).result != null) {
-      context.go('/results');
+    if (picked == null) return;
+
+    final bytes = picked.bytes;
+    final validationError = _validatePickedPdf(picked.name, bytes);
+    if (validationError != null) {
+      _zeroBytes(bytes);
+      _discardPendingPdf();
+      setState(() => _fileSelectionError = validationError);
+      return;
     }
+    if (bytes == null) return;
+
+    _discardPendingPdf();
+    setState(() {
+      _pendingPdfBytes = bytes;
+      _pendingPdfName = picked!.name;
+      _pendingPdfSize = bytes.length;
+      _fileSelectionError = null;
+    });
+  }
+
+  String? _validatePickedPdf(String name, Uint8List? bytes) {
+    if (bytes == null || bytes.isEmpty) {
+      return 'Please choose a non-empty PDF.';
+    }
+    if (!name.toLowerCase().endsWith('.pdf')) {
+      return 'Please choose a PDF file.';
+    }
+    if (bytes.length > _maxPdfBytes) {
+      return 'PDF must be 10 MB or smaller.';
+    }
+    if (bytes.length < 5 || String.fromCharCodes(bytes.take(5)) != '%PDF-') {
+      return 'The selected file is not a valid PDF.';
+    }
+    return null;
+  }
+
+  Future<void> _startScan(BuildContext context, WidgetRef ref) async {
+    if (_analysisInProgress) return;
+    final bytes = _pendingPdfBytes;
+    if (bytes == null) return;
+
+    final token = captchaController.readToken() ?? captchaToken;
+    if (token == null || token.isEmpty) {
+      setState(() {
+        captchaError =
+            'Please complete the CAPTCHA verification before scanning.';
+      });
+      return;
+    }
+
+    _pendingPdfBytes = null;
+    setState(() {
+      _analysisInProgress = true;
+      _pendingPdfName = null;
+      _pendingPdfSize = null;
+      _fileSelectionError = null;
+    });
+
+    var completed = false;
+    try {
+      await ref
+          .read(scanViewModelProvider.notifier)
+          .analyze(bytes, captchaToken: token);
+    } finally {
+      _zeroBytes(bytes);
+      if (mounted) {
+        captchaController.reset();
+        setState(() {
+          _analysisInProgress = false;
+          captchaToken = null;
+          captchaError = null;
+          captchaStatus = CaptchaRenderStatus.loading;
+          captchaGeneration++;
+        });
+        completed =
+            ref.read(scanViewModelProvider).stage == ScanStage.completed &&
+            ref.read(scanViewModelProvider).result != null;
+      }
+    }
+    if (completed && context.mounted) context.go('/results');
+  }
+
+  void _discardPendingPdf() {
+    _zeroBytes(_pendingPdfBytes);
+    _pendingPdfBytes = null;
+    _pendingPdfName = null;
+    _pendingPdfSize = null;
+  }
+
+  void _zeroBytes(Uint8List? bytes) {
+    if (bytes != null) bytes.fillRange(0, bytes.length, 0);
+  }
+
+  String _formatFileSize(int bytes) {
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 }
 

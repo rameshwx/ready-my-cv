@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:catalog_models/catalog_models.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/material.dart';
@@ -107,4 +109,129 @@ void main() {
     );
     expect(captchaRoleField.onChanged, isNull);
   });
+
+  testWidgets('selecting a PDF stages it without starting analysis', (
+    tester,
+  ) async {
+    final role = JobRole(
+      slug: 'backend-developer',
+      title: 'Backend Developer',
+      description: 'Test role',
+    );
+    final catalog = CatalogSnapshot(
+      version: 'catalog-1',
+      engineVersion: 'engine-1',
+      publishedAt: DateTime(2026),
+      roles: [role],
+    );
+    final picker = _FakePdfPicker();
+    final repository = _RecordingAnalysisRepository();
+    final captchaController = CaptchaChallengeController();
+    final captchaOwner = Object();
+    captchaController.attach(
+      captchaOwner,
+      reader: () => 'test-token',
+      reset: () {},
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          publishedCatalogProvider.overrideWith((ref) async => catalog),
+          publicConfigProvider.overrideWith(
+            (ref) async => const PublicConfig(captchaSiteKey: 'test-site-key'),
+          ),
+          analysisJobRepositoryProvider.overrideWithValue(repository),
+        ],
+        child: MaterialApp(
+          home: ScanPage(
+            filePicker: picker,
+            captchaController: captchaController,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final consentCheckbox = find.byType(CheckboxListTile);
+    tester.widget<CheckboxListTile>(consentCheckbox).onChanged!(true);
+    await tester.pump();
+    final roleField = tester.widget<DropdownButtonFormField<JobRole>>(
+      find.byType(DropdownButtonFormField<JobRole>),
+    );
+    roleField.onChanged!(role);
+    await tester.pump();
+
+    final uploadPrompt = find.text('Select a PDF to prepare your scan');
+    final uploadInkWell = tester.widget<InkWell>(
+      find.ancestor(of: uploadPrompt, matching: find.byType(InkWell)).first,
+    );
+    uploadInkWell.onTap!();
+    await tester.pumpAndSettle();
+
+    expect(picker.picks, 1);
+    expect(repository.uploads, 0);
+    expect(
+      find.text('PDF selected. Click Start Scan when ready.'),
+      findsOneWidget,
+    );
+    final startButton = find.ancestor(
+      of: find.text('Start Scan'),
+      matching: find.byWidgetPredicate((widget) => widget is ButtonStyleButton),
+    );
+    expect(find.text('Start Scan'), findsOneWidget);
+    expect(startButton, findsOneWidget);
+    expect(tester.widget<ButtonStyleButton>(startButton).onPressed, isNotNull);
+
+    final startPressed = tester
+        .widget<ButtonStyleButton>(startButton)
+        .onPressed!;
+    startPressed();
+    startPressed();
+    await tester.pumpAndSettle();
+
+    expect(repository.uploads, 1);
+    expect(picker.bytes.every((value) => value == 0), true);
+  });
+}
+
+class _FakePdfPicker implements PdfPicker {
+  final bytes = Uint8List.fromList(const [37, 80, 68, 70, 45, 49]);
+  int picks = 0;
+
+  @override
+  Future<PickedPdf?> pick() async {
+    picks++;
+    return PickedPdf(name: 'resume.pdf', bytes: bytes);
+  }
+}
+
+class _RecordingAnalysisRepository implements AnalysisJobRepository {
+  int uploads = 0;
+
+  @override
+  Future<AnalysisUpload> upload({
+    required List<int> bytes,
+    required String roleSlug,
+    String? seniority,
+    required bool consent,
+    required String captchaToken,
+  }) async {
+    uploads++;
+    return const AnalysisUpload(
+      handle: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      status: 'failed',
+      mode: 'terminal',
+    );
+  }
+
+  @override
+  Future<AnalysisJobStatus> status(String handle) => throw UnimplementedError();
+
+  @override
+  Future<void> sendEmail({required String handle, required String email}) =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> cancel(String handle) async {}
 }

@@ -1,5 +1,6 @@
 (function () {
   const widgets = Object.create(null);
+  const tokens = Object.create(null);
   const pending = Object.create(null);
   const apiSources = [
     'https://www.recaptcha.net/recaptcha/api.js',
@@ -14,6 +15,7 @@
   let apiScript = null;
 
   function notify(elementId, token) {
+    tokens[elementId] = token || '';
     window.dispatchEvent(new CustomEvent('ready-my-cv-captcha-' + elementId, {
       detail: token || '',
     }));
@@ -114,7 +116,10 @@
         sitekey: request.siteKey,
         callback: (token) => notify(elementId, token),
         'expired-callback': () => notify(elementId, ''),
-        'error-callback': () => notify(elementId, ''),
+        'error-callback': () => {
+          notify(elementId, '');
+          notifyStatus(elementId, 'blocked');
+        },
       });
       delete pending[elementId];
       notifyStatus(elementId, 'ready');
@@ -125,6 +130,7 @@
   }
 
   window.renderReadyMyCvCaptcha = function (elementId, siteKey) {
+    tokens[elementId] = '';
     pending[elementId] = { siteKey: siteKey };
     notifyStatus(elementId, 'loading');
     attemptRender(elementId, pending[elementId], 0);
@@ -132,10 +138,16 @@
 
   window.resetReadyMyCvCaptcha = function (elementId) {
     delete pending[elementId];
+    tokens[elementId] = '';
     if (widgets[elementId] !== undefined && window.grecaptcha) {
       window.grecaptcha.reset(widgets[elementId]);
     }
     notify(elementId, '');
+  };
+
+  window.getReadyMyCvCaptchaToken = function (elementId) {
+    const token = tokens[elementId];
+    return typeof token === 'string' && token.length > 0 ? token : '';
   };
 
   loadApi();
