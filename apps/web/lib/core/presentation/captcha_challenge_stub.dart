@@ -8,13 +8,11 @@ class CaptchaChallenge extends StatelessWidget {
     required this.siteKey,
     required this.onTokenChanged,
     this.onStatusChanged,
-    this.controller,
   });
 
   final String siteKey;
   final ValueChanged<String?> onTokenChanged;
   final ValueChanged<CaptchaRenderStatus>? onStatusChanged;
-  final CaptchaChallengeController? controller;
 
   @override
   Widget build(BuildContext context) => Container(
