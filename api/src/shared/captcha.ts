@@ -4,6 +4,7 @@ export class CaptchaError extends Error {
   constructor(
     readonly code: 'CAPTCHA_REQUIRED' | 'CAPTCHA_INVALID' | 'CAPTCHA_UNAVAILABLE',
     message: string,
+    readonly providerErrorCodes: readonly string[] = [],
   ) {
     super(message);
     this.name = 'CaptchaError';
@@ -28,9 +29,24 @@ export async function verifyCaptcha(token?: string, fetcher: typeof fetch = fetc
       body: new URLSearchParams({ secret: config.CAPTCHA_SECRET!, response: token }),
       signal: AbortSignal.timeout(5000),
     });
-    const payload = await response.json() as { success?: boolean };
-    if (!response.ok || payload.success !== true) throw new Error('CAPTCHA rejected.');
-  } catch {
+    const payload = await response.json() as { success?: boolean; 'error-codes'?: unknown };
+    if (!response.ok || payload.success !== true) {
+      throw new CaptchaError(
+        'CAPTCHA_INVALID',
+        'CAPTCHA verification failed.',
+        providerErrorCodes(payload['error-codes']),
+      );
+    }
+  } catch (error) {
+    if (error instanceof CaptchaError) throw error;
     throw new CaptchaError('CAPTCHA_INVALID', 'CAPTCHA verification failed.');
   }
+}
+
+function providerErrorCodes(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is string => typeof item === 'string')
+    .filter((item) => /^[a-z-]{1,64}$/.test(item))
+    .slice(0, 8);
 }

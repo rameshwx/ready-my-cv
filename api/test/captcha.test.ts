@@ -19,8 +19,15 @@ test('CAPTCHA rejects missing and invalid tokens without leaking token data', as
     (error: unknown) => error instanceof CaptchaError && error.code === 'CAPTCHA_REQUIRED',
   );
   await assert.rejects(
-    verifyCaptcha('invalid-token', async () => new Response(JSON.stringify({ success: false }), { status: 200 })),
-    (error: unknown) => error instanceof CaptchaError && error.code === 'CAPTCHA_INVALID' && !error.message.includes('invalid-token'),
+    verifyCaptcha('invalid-token', async () => new Response(JSON.stringify({
+      success: false,
+      'error-codes': ['invalid-input-response'],
+    }), { status: 200 })),
+    (error: unknown) =>
+      error instanceof CaptchaError &&
+      error.code === 'CAPTCHA_INVALID' &&
+      !error.message.includes('invalid-token') &&
+      error.providerErrorCodes.includes('invalid-input-response'),
   );
 });
 
@@ -45,3 +52,20 @@ test('CAPTCHA verifier converts provider/network failures to a safe error', asyn
     (error: unknown) => error instanceof CaptchaError && error.code === 'CAPTCHA_INVALID' && !error.message.includes('timeout-token'),
   );
 });
+
+for (const providerCode of ['timeout-or-duplicate', 'invalid-input-secret', 'missing-input-secret']) {
+  test(`CAPTCHA retains the safe provider diagnostic ${providerCode}`, async () => {
+    await assert.rejects(
+      verifyCaptcha('rejected-token', async () => new Response(JSON.stringify({
+        success: false,
+        'error-codes': [providerCode],
+      }), { status: 200 })),
+      (error: unknown) =>
+        error instanceof CaptchaError &&
+        error.code === 'CAPTCHA_INVALID' &&
+        error.providerErrorCodes.length === 1 &&
+        error.providerErrorCodes[0] === providerCode &&
+        !error.message.includes('rejected-token'),
+    );
+  });
+}
