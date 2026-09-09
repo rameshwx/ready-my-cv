@@ -6,19 +6,24 @@ abstract interface class CatalogRepository {
 }
 
 class PublicConfig {
-  const PublicConfig({
-    this.donationUrl,
-    this.adsEnabled = false,
-    this.captchaSiteKey,
-  });
+  const PublicConfig({this.donationUrl, this.adsEnabled = false});
 
   final String? donationUrl;
   final bool adsEnabled;
-  final String? captchaSiteKey;
 }
 
 abstract interface class PublicConfigRepository {
   Future<PublicConfig> fetch();
+}
+
+class PublicVerificationChallenge {
+  const PublicVerificationChallenge({required this.question});
+
+  final String question;
+}
+
+abstract interface class PublicVerificationRepository {
+  Future<PublicVerificationChallenge> issue();
 }
 
 abstract interface class RoleRequestRepository {
@@ -28,7 +33,7 @@ abstract interface class RoleRequestRepository {
     String? industry,
     String? desiredSkills,
     String? replyEmail,
-    required String captchaToken,
+    required int verificationAnswer,
   });
 }
 
@@ -128,7 +133,7 @@ abstract interface class AnalysisJobRepository {
     required String roleSlug,
     String? seniority,
     required bool consent,
-    required String captchaToken,
+    required int verificationAnswer,
   });
 
   Future<AnalysisJobStatus> status(String handle);

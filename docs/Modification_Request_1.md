@@ -60,7 +60,7 @@ The route must:
 * Never store the original filename.
 * Never log the uploaded file, filename, PDF hash, extracted text, or request body.
 * Apply IP-based and request-based rate limiting without permanently storing the raw IP address.
-* Require CAPTCHA or equivalent abuse prevention for public submissions.
+* Require equivalent abuse prevention for public submissions.
 * Return a high-entropy temporary job handle, never a sequential database ID.
 
 Add these related internal routes:

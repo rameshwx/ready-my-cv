@@ -19,10 +19,10 @@ test('admin role and role-request mutation routes are authenticated and audited'
   assert.match(admin, /scope\.addHook\('preHandler', authenticate\)/);
 });
 
-test('public role requests require CAPTCHA and use a bounded dedupe window', async () => {
+test('public role requests require one-time verification and use a bounded dedupe window', async () => {
   const source = await readFile(new URL('../src/modules/role-requests/routes.ts', import.meta.url), 'utf8');
-  assert.match(source, /captchaToken: z\.string\(\)\.min\(1\)\.max\(4096\)/);
-  assert.match(source, /await verifyCaptcha\(value\.captchaToken\)/);
+  assert.match(source, /verificationAnswer: z\.unknown\(\)/);
+  assert.match(source, /await consumePublicVerificationChallenge\(client, request, reply, verificationAnswer\)/);
   assert.match(source, /pg_advisory_xact_lock/);
   assert.match(source, /ROLE_REQUEST_DEDUPE_MINUTES/);
   assert.doesNotMatch(source, /console\.(log|info|debug)/);

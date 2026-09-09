@@ -59,8 +59,6 @@ jobs:
             -e JOB_HANDLE_PEPPER='ci-only-job-handle-pepper-value-at-least-32-characters' \
             -e ADMIN_INITIAL_PASSWORD='ci-only-initial-password' \
             -e PUBLIC_ORIGIN='http://localhost:8080' \
-            -e CAPTCHA_SITE_KEY='ci-test-site-key' \
-            -e CAPTCHA_SECRET='ci-test-secret' \
             -e SMTP_HOST='127.0.0.1' -e SMTP_USER='ci' -e SMTP_PASSWORD='ci' \
             -e EMAIL_FROM='ci@example.com' \
             ready-my-cv:ci

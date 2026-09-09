@@ -3,7 +3,8 @@ import { z } from 'zod';
 
 import { config } from '../../config.js';
 import { pool } from '../../db/pool.js';
-import { CaptchaError, verifyCaptcha } from '../../shared/captcha.js';
+import { withAnalysisTransaction } from '../../shared/db-context.js';
+import { PublicVerificationError, consumePublicVerificationChallenge } from '../../shared/public-verification.js';
 import { errorEnvelope, sendError } from '../../shared/errors.js';
 import {
   attachEmail,
@@ -17,13 +18,13 @@ import {
 
 const roleSlugSchema = z.string().regex(/^[a-z0-9-]{2,80}$/);
 const handleSchema = z.string().regex(/^[A-Za-z0-9_-]{32,128}$/);
-const allowedFields = new Set(['roleSlug', 'seniority', 'consent', 'captchaToken']);
+const allowedFields = new Set(['roleSlug', 'seniority', 'consent', 'verificationAnswer']);
 
 type UploadFields = {
   roleSlug?: string;
   seniority?: string;
   consent?: string;
-  captchaToken?: string;
+  verificationAnswer?: string;
 };
 
 export async function registerAnalysisRoutes(app: FastifyInstance) {
@@ -46,7 +47,10 @@ export async function registerAnalysisRoutes(app: FastifyInstance) {
       if (upload.fields.consent !== 'true') return sendError(reply, 400, 'CONSENT_REQUIRED', 'Consent is required before temporary processing.');
       const seniority = upload.fields.seniority?.trim() || null;
       if (seniority && seniority.length > 30) return sendError(reply, 400, 'VALIDATION_ERROR', 'Seniority is invalid.');
-      await verifyCaptcha(upload.fields.captchaToken);
+      const verificationAnswer = Number(upload.fields.verificationAnswer);
+      await withAnalysisTransaction((client) =>
+        consumePublicVerificationChallenge(client, request, reply, verificationAnswer),
+      );
 
       const catalogResult = await pool.query('SELECT snapshot FROM catalog_snapshots ORDER BY published_at DESC LIMIT 1');
       const catalog = catalogResult.rows[0]?.snapshot as { version?: string; roles?: Array<Record<string, unknown>> } | undefined;
@@ -78,7 +82,7 @@ export async function registerAnalysisRoutes(app: FastifyInstance) {
         pollAfterMs: 1500,
       });
     } catch (error) {
-      if (error instanceof CaptchaError) return sendError(reply, error.code === 'CAPTCHA_UNAVAILABLE' ? 503 : 400, error.code, error.message);
+      if (error instanceof PublicVerificationError) return sendError(reply, 400, 'VERIFICATION_REQUIRED', error.message);
       if (error instanceof JobServiceError) return sendError(reply, error.statusCode, error.code, error.message);
       if (isMultipartLimitError(error)) return sendError(reply, 413, 'FILE_TOO_LARGE', 'PDF files must be 10 MB or smaller.');
       return sendError(reply, 400, 'INVALID_UPLOAD', 'The upload could not be accepted.');

@@ -63,7 +63,10 @@ class ScanViewModel extends _$ScanViewModel {
     if (!state.busy) state = state.copyWith(stage: ScanStage.idle);
   }
 
-  Future<void> analyze(Uint8List bytes, {required String? captchaToken}) async {
+  Future<void> analyze(
+    Uint8List bytes, {
+    required int? verificationAnswer,
+  }) async {
     if (state.busy) return;
     if (!state.consentGiven) {
       state = state.copyWith(
@@ -71,10 +74,10 @@ class ScanViewModel extends _$ScanViewModel {
       );
       return;
     }
-    if (captchaToken == null || captchaToken.isEmpty) {
+    if (verificationAnswer == null) {
       state = state.copyWith(
         errorMessage:
-            'Please complete the CAPTCHA verification before uploading.',
+            'Please complete the verification question before uploading.',
       );
       return;
     }
@@ -126,7 +129,7 @@ class ScanViewModel extends _$ScanViewModel {
             roleSlug: role.slug,
             seniority: state.seniority,
             consent: true,
-            captchaToken: captchaToken,
+            verificationAnswer: verificationAnswer,
           );
       cancellation.throwIfCancelled();
       if (upload.mode == 'terminal') {
@@ -171,7 +174,9 @@ class ScanViewModel extends _$ScanViewModel {
         state = state.copyWith(
           stage: ScanStage.failed,
           busy: false,
-          errorMessage: error.message,
+          errorMessage: error.code == 'VERIFICATION_REQUIRED'
+              ? 'Your verification question is no longer valid. Please answer the new question and try again.'
+              : error.message,
           jobHandle: null,
         );
       }

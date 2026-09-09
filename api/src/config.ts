@@ -15,12 +15,6 @@ const schema = z.object({
   SESSION_IDLE_MINUTES: z.coerce.number().positive().default(30),
   REQUEST_BODY_LIMIT: z.coerce.number().int().positive().default(131_072),
   DATABASE_APP_ROLE: z.string().regex(/^(?:[a-z_][a-z0-9_]*)?$/).default(''),
-  CAPTCHA_SITE_KEY: z.string().trim().refine(
-    (value) => !value.includes('\\'),
-    'CAPTCHA_SITE_KEY must not contain backslash escape characters.',
-  ).optional(),
-  CAPTCHA_SECRET: z.string().optional(),
-  CAPTCHA_VERIFY_URL: z.string().url().default('https://www.google.com/recaptcha/api/siteverify'),
   ROLE_REQUEST_DEDUPE_MINUTES: z.coerce.number().int().min(1).max(1_440).default(15),
   DATA_ENCRYPTION_KEY: z.string().optional(),
   JOB_HANDLE_PEPPER: z.string().optional(),
@@ -62,9 +56,6 @@ const schema = z.object({
   const smtpValues = [value.SMTP_HOST, value.SMTP_USER, value.SMTP_PASSWORD, value.EMAIL_FROM];
   if (value.NODE_ENV === 'production' && smtpValues.some((item) => !item)) {
     context.addIssue({ code: z.ZodIssueCode.custom, path: ['SMTP_HOST'], message: 'SMTP configuration is required in production.' });
-  }
-  if (Boolean(value.CAPTCHA_SITE_KEY) !== Boolean(value.CAPTCHA_SECRET)) {
-    context.addIssue({ code: z.ZodIssueCode.custom, path: ['CAPTCHA_SECRET'], message: 'CAPTCHA_SITE_KEY and CAPTCHA_SECRET must be supplied together.' });
   }
   for (const [key, address] of [['EMAIL_FROM', value.EMAIL_FROM], ['EMAIL_REPLY_TO', value.EMAIL_REPLY_TO]] as const) {
     if (address && !emailAddress.safeParse(address).success) {

@@ -14,7 +14,7 @@ Production target: `https://cv.uxi.asia` · Admin: `https://cv.uxi.asia/admin`
 - Eleven seeded job-role definitions and 20 safe synthetic evaluation cases.
 - Node.js 22, TypeScript, Fastify and PostgreSQL same-origin routes; no CORS or public API contract.
 - Exactly one administrator, initialized from server-side settings, Argon2id hashing, hashed server sessions in PostgreSQL, Secure/HttpOnly/SameSite cookie, expiry, idle timeout, logout and all-session revocation on credential change.
-- Google reCAPTCHA v2 protection on public role requests and PDF uploads, with server-only verification secrets and a short-window duplicate request guard.
+- One-time, server-issued word-math verification on public role requests and PDF uploads, with a short-window duplicate request guard.
 - PostgreSQL migrations with singleton constraint, catalog snapshots, authoring/request/audit/settings schema and RLS enabled.
 - One multi-stage root Dockerfile that builds Flutter and Node.js into a single non-root container, plus GHCR commit-SHA CI and health checks.
 
@@ -28,7 +28,7 @@ Requirements: Flutter 3.32 / Dart 3.8, Node.js 22, npm 11, and PostgreSQL 16.
 
 ```bash
 cp .env.example .env
-# Edit DATABASE_URL, SESSION_HASH_PEPPER, DATA_ENCRYPTION_KEY, JOB_HANDLE_PEPPER, CAPTCHA_SITE_KEY, and CAPTCHA_SECRET.
+# Edit DATABASE_URL, SESSION_HASH_PEPPER, DATA_ENCRYPTION_KEY, and JOB_HANDLE_PEPPER.
 set -a && . ./.env && set +a
 npm --prefix api ci
 npm --prefix api run db:migrate
@@ -61,7 +61,7 @@ docker build -t ready-my-cv:local .
 
 The generated evaluation output records 20 cases, 100 gold-labelled requirements, trajectories, repeat-run consistency, evidence traceability, runtime, failures, and a fair exact-term baseline. It is evidence for the deterministic engine only; it does not establish the truth of a CV claim.
 
-The backend accepts one multipart PDF only at `/app/analysis-jobs`; both uploads and role requests require Google reCAPTCHA v2 verification. All related routes are same-origin application routes and are not a public API. The fast path returns a verified in-memory result within `FAST_PATH_TIMEOUT_MS`. Slower jobs remain temporary for at most `JOB_TTL_MINUTES`, then request an email only after `awaiting_email`. Successful email delivery and terminal failures purge job data immediately. The recipient’s email provider may retain a delivered report.
+The backend accepts one multipart PDF only at `/app/analysis-jobs`; both uploads and role requests require a five-minute, one-use word-math answer issued by the same-origin application. The server stores only a peppered hash of the HttpOnly cookie token and the expected integer answer; this is a basic abuse deterrent, not a sophisticated-bot defense. All related routes are same-origin application routes and are not a public API. The fast path returns a verified in-memory result within `FAST_PATH_TIMEOUT_MS`. Slower jobs remain temporary for at most `JOB_TTL_MINUTES`, then request an email only after `awaiting_email`. Successful email delivery and terminal failures purge job data immediately. The recipient’s email provider may retain a delivered report.
 
 ## Deployment
 

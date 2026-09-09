@@ -17,6 +17,7 @@ import {
 } from './job-service.js';
 import { config } from '../../config.js';
 import { removeTemporaryFile, writeTemporaryPdf, zeroBuffer } from './temp-files.js';
+import { purgeExpiredPublicVerificationChallenges } from '../../shared/public-verification.js';
 
 export type WorkerHealth = {
   worker: 'healthy' | 'starting' | 'stopped';
@@ -41,6 +42,7 @@ export class AnalysisWorker {
   async start() {
     await cleanupAnalysisDirectory();
     await recoverAndPurge();
+    await purgeExpiredPublicVerificationChallenges();
     this.startedAt = Date.now();
     this.lastCleanupAt = Date.now();
     this.stopping = false;
@@ -148,6 +150,7 @@ export class AnalysisWorker {
     if (this.stopping) return;
     try {
       await recoverAndPurge();
+      await purgeExpiredPublicVerificationChallenges();
       this.lastCleanupAt = Date.now();
     } catch {
       // The next scheduled cleanup retries without exposing database details.

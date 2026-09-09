@@ -43,6 +43,17 @@ test('role-request migration contains short-window dedupe storage and RLS lookup
   assert.match(sql, /app\.role_request/);
 });
 
+test('public verification migration stores only a hashed cookie token and answer under RLS', async () => {
+  const sql = await readFile(new URL('../migrations/004_public_verification_challenges.sql', import.meta.url), 'utf8');
+  assert.match(sql, /token_hash text PRIMARY KEY/);
+  assert.match(sql, /expected_answer smallint NOT NULL/);
+  assert.match(sql, /expires_at timestamptz NOT NULL/);
+  assert.match(sql, /ENABLE ROW LEVEL SECURITY/);
+  assert.match(sql, /FORCE ROW LEVEL SECURITY/);
+  assert.match(sql, /app\.verification_challenge/);
+  assert.doesNotMatch(sql, /ip|email|submission|answer_text/i);
+});
+
 test('server contains no JWT or CV upload endpoints and uses session cookies', async () => {
   const app = await readFile(new URL('../src/app.ts', import.meta.url), 'utf8');
   const auth = await readFile(new URL('../src/modules/auth/routes.ts', import.meta.url), 'utf8');
@@ -67,18 +78,12 @@ test('CSP allows only the trusted Flutter and Cloudflare runtime origins', async
   const imgSrc = directive('imgSrc');
   assert.match(scriptSrc, /https:\/\/static\.cloudflareinsights\.com/);
   assert.match(scriptSrc, /https:\/\/www\.gstatic\.com/);
-  assert.match(scriptSrc, /https:\/\/www\.recaptcha\.net\/recaptcha\//);
-  assert.match(scriptSrc, /https:\/\/www\.google\.com\/recaptcha\//);
   assert.doesNotMatch(scriptSrc, /unsafe-inline|https:\/\/\*/);
   assert.match(connectSrc, /https:\/\/cloudflareinsights\.com/);
   assert.match(connectSrc, /https:\/\/www\.gstatic\.com/);
   assert.match(connectSrc, /https:\/\/fonts\.gstatic\.com/);
-  assert.match(connectSrc, /https:\/\/www\.recaptcha\.net\/recaptcha\//);
-  assert.match(connectSrc, /https:\/\/www\.google\.com\/recaptcha\//);
   assert.doesNotMatch(connectSrc, /https:\/\/\*/);
   assert.match(fontSrc, /https:\/\/fonts\.gstatic\.com/);
-  assert.match(frameSrc, /https:\/\/www\.recaptcha\.net\/recaptcha\//);
-  assert.match(frameSrc, /https:\/\/www\.google\.com\/recaptcha\//);
-  assert.match(imgSrc, /https:\/\/www\.recaptcha\.net\/recaptcha\//);
-  assert.match(imgSrc, /https:\/\/www\.google\.com\/recaptcha\//);
+  assert.match(frameSrc, /'none'/);
+  assert.doesNotMatch(imgSrc, /google/i);
 });

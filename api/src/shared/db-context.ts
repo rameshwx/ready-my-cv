@@ -44,12 +44,20 @@ export const withAnalysisTransaction = <T>(callback: (client: PoolClient) => Pro
     admin_authenticated: 'false',
     analysis_request: 'true',
     analysis_worker: 'false',
+    verification_challenge: 'true',
   });
 
 export const withRoleRequestTransaction = <T>(callback: (client: PoolClient) => Promise<T>) =>
   withContextTransaction(callback, {
     admin_authenticated: 'false',
     role_request: 'true',
+    verification_challenge: 'true',
+  });
+
+export const withVerificationTransaction = <T>(callback: (client: PoolClient) => Promise<T>) =>
+  withContextTransaction(callback, {
+    admin_authenticated: 'false',
+    verification_challenge: 'true',
   });
 
 export const withWorkerTransaction = <T>(callback: (client: PoolClient) => Promise<T>) =>
@@ -57,4 +65,5 @@ export const withWorkerTransaction = <T>(callback: (client: PoolClient) => Promi
     admin_authenticated: 'false',
     analysis_request: 'false',
     analysis_worker: 'true',
+    verification_challenge: 'true',
   });

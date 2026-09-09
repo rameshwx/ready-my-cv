@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { config } from '../../config.js';
 import { pool } from '../../db/pool.js';
 import { withRoleRequestTransaction } from '../../shared/db-context.js';
-import { CaptchaError, verifyCaptcha } from '../../shared/captcha.js';
+import { PublicVerificationError, consumePublicVerificationChallenge } from '../../shared/public-verification.js';
 import { errorEnvelope } from '../../shared/errors.js';
 
 const requestSchema = z.object({
@@ -14,7 +14,7 @@ const requestSchema = z.object({
   industry: z.string().trim().max(200).optional(),
   desiredSkills: z.string().trim().max(500).optional(),
   replyEmail: z.string().email().max(254).optional().or(z.literal('')),
-  captchaToken: z.string().min(1).max(4096),
+  verificationAnswer: z.unknown(),
   website: z.literal('').optional(),
 }).strict();
 
@@ -29,9 +29,12 @@ export async function registerRoleRequestRoutes(app: FastifyInstance) {
     if (!parsed.success) return reply.code(400).send(errorEnvelope('VALIDATION_ERROR', 'One or more fields are invalid.'));
     const value = parsed.data;
     try {
-      await verifyCaptcha(value.captchaToken);
-      const dedupeHash = roleRequestDedupeHash(value);
       const result = await withRoleRequestTransaction(async (client) => {
+        const verificationAnswer = typeof value.verificationAnswer === 'number'
+          ? value.verificationAnswer
+          : Number.NaN;
+        await consumePublicVerificationChallenge(client, request, reply, verificationAnswer);
+        const dedupeHash = roleRequestDedupeHash(value);
         await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [dedupeHash]);
         const existing = await client.query(
           `SELECT id FROM role_requests
@@ -50,8 +53,8 @@ export async function registerRoleRequestRoutes(app: FastifyInstance) {
       });
       return reply.code(202).send(result);
     } catch (error) {
-      if (error instanceof CaptchaError) {
-        return reply.code(error.code === 'CAPTCHA_UNAVAILABLE' ? 503 : 400).send(errorEnvelope(error.code, error.message));
+      if (error instanceof PublicVerificationError) {
+        return reply.code(400).send(errorEnvelope('VERIFICATION_REQUIRED', error.message));
       }
       throw error;
     }

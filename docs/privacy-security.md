@@ -6,7 +6,7 @@
 - Administrator authentication uses one Argon2id hash and a server-side session cookie. There are no JWTs, bearer tokens, refresh tokens, registration, or multi-admin routes.
 - Mutating requests require same-origin Origin/Referer; JSON is required except for multipart on the exact upload route. Schemas and multipart shape are strict and reject unknown fields/files.
 - Rate limits cover login by IP plus normalized username, role requests, aggregate events, and the general application boundary.
-- Google reCAPTCHA v2 is required for public role requests and PDF uploads. The browser receives only the public site key; the server sends the short-lived token to Google for verification and never logs the token or secret.
+- Public role requests and PDF uploads require a server-issued English word-math answer. The browser receives only the question; the server stores a peppered hash of a short-lived HttpOnly cookie token and the expected integer answer. The answer and cookie token are not logged, and every attempted answer consumes the prompt.
 - Session expiry, logout, credential rotation, and credential-change all-session revocation are server enforced.
 
 Manual release checks still required: inspect the deployed browser network panel for synthetic markers and confirm no persistence, verify public `/`, `/admin`, upload/status/email/cancel and health routes, inspect response headers, confirm no public PostgreSQL binding, run a disposable migration/cleanup test, and confirm configured Coolify secrets are not exposed in logs. Email-provider retention and historical backup retention remain outside the application’s deletion boundary.

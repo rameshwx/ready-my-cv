@@ -28,8 +28,21 @@ class HttpPublicConfigRepository implements PublicConfigRepository {
     return PublicConfig(
       donationUrl: json['donationUrl'] as String?,
       adsEnabled: json['adsEnabled'] == true,
-      captchaSiteKey: (json['captchaSiteKey'] as String?)?.trim(),
     );
+  }
+}
+
+class HttpPublicVerificationRepository implements PublicVerificationRepository {
+  const HttpPublicVerificationRepository(this.client);
+
+  final AppHttpClient client;
+
+  @override
+  Future<PublicVerificationChallenge> issue() async {
+    final json = Map<String, dynamic>.from(
+      await client.postJson('/app/verification-challenges', {}) as Map,
+    );
+    return PublicVerificationChallenge(question: json['question'] as String);
   }
 }
 
@@ -45,7 +58,7 @@ class HttpRoleRequestRepository implements RoleRequestRepository {
     String? industry,
     String? desiredSkills,
     String? replyEmail,
-    required String captchaToken,
+    required int verificationAnswer,
   }) async {
     final response = Map<String, dynamic>.from(
       await client.postJson('/app/role-requests', {
@@ -55,7 +68,7 @@ class HttpRoleRequestRepository implements RoleRequestRepository {
             if (desiredSkills?.isNotEmpty == true)
               'desiredSkills': desiredSkills,
             if (replyEmail?.isNotEmpty == true) 'replyEmail': replyEmail,
-            'captchaToken': captchaToken,
+            'verificationAnswer': verificationAnswer,
             'website': '',
           })
           as Map,
@@ -236,7 +249,7 @@ class HttpAnalysisJobRepository implements AnalysisJobRepository {
     required String roleSlug,
     String? seniority,
     required bool consent,
-    required String captchaToken,
+    required int verificationAnswer,
   }) async {
     final response = Map<String, dynamic>.from(
       await client.postMultipart(
@@ -246,7 +259,7 @@ class HttpAnalysisJobRepository implements AnalysisJobRepository {
               'roleSlug': roleSlug,
               if (seniority != null) 'seniority': seniority,
               'consent': consent.toString(),
-              'captchaToken': captchaToken,
+              'verificationAnswer': verificationAnswer.toString(),
             },
           )
           as Map,

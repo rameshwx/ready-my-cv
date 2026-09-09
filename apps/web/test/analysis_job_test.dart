@@ -20,7 +20,7 @@ void main() {
     notifier.chooseRole(_role, 'senior');
     await notifier.analyze(
       Uint8List.fromList(_pdfBytes),
-      captchaToken: 'test-token',
+      verificationAnswer: 42,
     );
     expect(
       container.read(scanViewModelProvider).errorMessage,
@@ -29,40 +29,32 @@ void main() {
     expect(repository.uploads, 0);
   });
 
-  test('CAPTCHA is required before the backend repository is called', () async {
-    final repository = _FakeAnalysisRepository();
-    final container = ProviderContainer(
-      overrides: [analysisJobRepositoryProvider.overrideWithValue(repository)],
-    );
-    addTearDown(container.dispose);
-    final notifier = container.read(scanViewModelProvider.notifier);
-    notifier.chooseRole(_role, 'senior');
-    notifier.setConsent(true);
-    await notifier.analyze(Uint8List.fromList(_pdfBytes), captchaToken: null);
-    expect(
-      container.read(scanViewModelProvider).errorMessage,
-      contains('CAPTCHA'),
-    );
-    expect(repository.uploads, 0);
-  });
+  test(
+    'verification is required before the backend repository is called',
+    () async {
+      final repository = _FakeAnalysisRepository();
+      final container = ProviderContainer(
+        overrides: [
+          analysisJobRepositoryProvider.overrideWithValue(repository),
+        ],
+      );
+      addTearDown(container.dispose);
+      final notifier = container.read(scanViewModelProvider.notifier);
+      notifier.chooseRole(_role, 'senior');
+      notifier.setConsent(true);
+      await notifier.analyze(
+        Uint8List.fromList(_pdfBytes),
+        verificationAnswer: null,
+      );
+      expect(
+        container.read(scanViewModelProvider).errorMessage,
+        contains('verification question'),
+      );
+      expect(repository.uploads, 0);
+    },
+  );
 
-  test('CAPTCHA is validated before role selection', () async {
-    final repository = _FakeAnalysisRepository();
-    final container = ProviderContainer(
-      overrides: [analysisJobRepositoryProvider.overrideWithValue(repository)],
-    );
-    addTearDown(container.dispose);
-    final notifier = container.read(scanViewModelProvider.notifier);
-    notifier.setConsent(true);
-    await notifier.analyze(Uint8List.fromList(_pdfBytes), captchaToken: null);
-    expect(
-      container.read(scanViewModelProvider).errorMessage,
-      contains('CAPTCHA'),
-    );
-    expect(repository.uploads, 0);
-  });
-
-  test('role selection is required after consent and CAPTCHA', () async {
+  test('verification is validated before role selection', () async {
     final repository = _FakeAnalysisRepository();
     final container = ProviderContainer(
       overrides: [analysisJobRepositoryProvider.overrideWithValue(repository)],
@@ -72,7 +64,26 @@ void main() {
     notifier.setConsent(true);
     await notifier.analyze(
       Uint8List.fromList(_pdfBytes),
-      captchaToken: 'test-token',
+      verificationAnswer: null,
+    );
+    expect(
+      container.read(scanViewModelProvider).errorMessage,
+      contains('verification question'),
+    );
+    expect(repository.uploads, 0);
+  });
+
+  test('role selection is required after consent and verification', () async {
+    final repository = _FakeAnalysisRepository();
+    final container = ProviderContainer(
+      overrides: [analysisJobRepositoryProvider.overrideWithValue(repository)],
+    );
+    addTearDown(container.dispose);
+    final notifier = container.read(scanViewModelProvider.notifier);
+    notifier.setConsent(true);
+    await notifier.analyze(
+      Uint8List.fromList(_pdfBytes),
+      verificationAnswer: 42,
     );
     expect(
       container.read(scanViewModelProvider).errorMessage,
@@ -108,10 +119,10 @@ void main() {
       notifier.chooseRole(_role, 'senior');
       notifier.setConsent(true);
       final bytes = Uint8List.fromList(_pdfBytes);
-      await notifier.analyze(bytes, captchaToken: 'test-token');
+      await notifier.analyze(bytes, verificationAnswer: 42);
       final state = container.read(scanViewModelProvider);
       expect(repository.uploads, 1);
-      expect(repository.captchaToken, 'test-token');
+      expect(repository.verificationAnswer, 42);
       expect(bytes.every((value) => value == 0), true);
       expect(state.stage, ScanStage.completed);
       expect(state.result?.verification.valid, true);
@@ -163,7 +174,7 @@ const _pdfBytes = [37, 80, 68, 70, 45, 49, 46, 55];
 
 class _FakeAnalysisRepository implements AnalysisJobRepository {
   int uploads = 0;
-  String? captchaToken;
+  int? verificationAnswer;
 
   @override
   Future<AnalysisUpload> upload({
@@ -171,10 +182,10 @@ class _FakeAnalysisRepository implements AnalysisJobRepository {
     required String roleSlug,
     String? seniority,
     required bool consent,
-    required String captchaToken,
+    required int verificationAnswer,
   }) async {
     uploads += 1;
-    this.captchaToken = captchaToken;
+    this.verificationAnswer = verificationAnswer;
     return AnalysisUpload(
       handle: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
       status: 'completed',

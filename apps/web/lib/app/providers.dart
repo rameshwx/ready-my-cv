@@ -19,6 +19,12 @@ final publicConfigRepositoryProvider = Provider<PublicConfigRepository>(
   (ref) => HttpPublicConfigRepository(ref.watch(appHttpClientProvider)),
 );
 
+final publicVerificationRepositoryProvider =
+    Provider<PublicVerificationRepository>(
+      (ref) =>
+          HttpPublicVerificationRepository(ref.watch(appHttpClientProvider)),
+    );
+
 final publicConfigProvider = FutureProvider.autoDispose<PublicConfig>(
   (ref) => ref.watch(publicConfigRepositoryProvider).fetch(),
 );

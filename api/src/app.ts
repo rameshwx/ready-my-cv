@@ -10,7 +10,7 @@ import Fastify, { type FastifyRequest } from 'fastify';
 
 import { config } from './config.js';
 import { pool } from './db/pool.js';
-import { isCaptchaConfigured } from './shared/captcha.js';
+import { issuePublicVerificationChallenge } from './shared/public-verification.js';
 import { registerAuthRoutes } from './modules/auth/routes.js';
 import { registerAdminRoutes } from './modules/admin/routes.js';
 import { registerCatalogRoutes } from './modules/catalog/routes.js';
@@ -100,9 +100,6 @@ export async function buildApp(options: { analysisWorker?: AnalysisWorker } = {}
           "'wasm-unsafe-eval'",
           'https://static.cloudflareinsights.com',
           'https://www.gstatic.com',
-          'https://www.recaptcha.net/recaptcha/',
-          'https://www.google.com/recaptcha/',
-          'https://www.gstatic.com/recaptcha/',
         ],
         styleSrc: ["'self'", "'unsafe-inline'"],
         connectSrc: [
@@ -110,13 +107,10 @@ export async function buildApp(options: { analysisWorker?: AnalysisWorker } = {}
           'https://cloudflareinsights.com',
           'https://www.gstatic.com',
           'https://fonts.gstatic.com',
-          'https://www.recaptcha.net/recaptcha/',
-          'https://www.google.com/recaptcha/',
-          'https://www.gstatic.com/recaptcha/',
         ],
         fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
-        frameSrc: ['https://www.recaptcha.net/recaptcha/', 'https://www.google.com/recaptcha/'],
-        imgSrc: ["'self'", 'data:', 'https://www.recaptcha.net/recaptcha/', 'https://www.google.com/recaptcha/', 'https://www.gstatic.com/recaptcha/'],
+        frameSrc: ["'none'"],
+        imgSrc: ["'self'", 'data:'],
         workerSrc: ["'self'", 'blob:'],
         objectSrc: ["'none'"],
         frameAncestors: ["'none'"],
@@ -133,12 +127,15 @@ export async function buildApp(options: { analysisWorker?: AnalysisWorker } = {}
       const worker = options.analysisWorker?.health();
       const workerReady = !worker || worker.worker === 'healthy' && worker.cleanup === 'healthy';
       const smtpReady = !worker || config.NODE_ENV !== 'production' || worker.smtpConfigured;
-      if (!workerReady || !smtpReady || !isCaptchaConfigured()) return reply.code(503).send({ status: 'unavailable' });
+      if (!workerReady || !smtpReady) return reply.code(503).send({ status: 'unavailable' });
       return { status: 'ready' };
     } catch {
       return reply.code(503).send({ status: 'unavailable' });
     }
   });
+  app.post('/app/verification-challenges', { config: { rateLimit: { max: 10, timeWindow: '5 minutes' } } }, async (_request, reply) =>
+    reply.send(await issuePublicVerificationChallenge(reply)),
+  );
 
   await registerAuthRoutes(app);
   await registerCatalogRoutes(app);

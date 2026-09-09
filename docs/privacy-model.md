@@ -4,7 +4,7 @@ PDF bytes are uploaded only after the visitor accepts the exact temporary-proces
 
 Raw filenames, IP addresses, document hashes, CV text, reports, and email addresses are absent from logs, analytics, URLs, cookies, browser persistence, and admin views. The browser never stores the handle, PDF, report, or email in localStorage, IndexedDB, or history. The recipient’s email provider may retain a delivered report, and PostgreSQL backups may retain encrypted historical pages until their configured retention expires.
 
-Public role requests and PDF uploads require Google reCAPTCHA v2 verification. Only the public site key is sent to the browser; the server-only secret and short-lived verification token are not stored or logged. Identical normalized role requests are acknowledged without a second row for 15 minutes.
+Public role requests and PDF uploads require a five-minute, one-use English word-math answer. The browser receives only the question; the server stores only a peppered hash of the HttpOnly cookie token and expected integer answer. Answers and cookie tokens are not logged. Identical normalized role requests are acknowledged without a second row for 15 minutes.
 
 The server rejects undefined routes, unknown multipart fields, extra files, spoofed MIME types, malformed/encrypted PDFs, oversized files/pages, and bodies over the configured upload request limit. There is no CORS plugin or public API documentation.
 

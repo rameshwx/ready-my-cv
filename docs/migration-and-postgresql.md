@@ -2,7 +2,7 @@
 
 `api/migrations/001_initial.sql` creates the singleton administrator, hashed sessions, normalized catalog authoring tables, immutable catalog snapshots, role requests, aggregate metrics, audit logs, and settings. `002_analysis_jobs.sql` adds only temporary `analysis_jobs` rows with application-encrypted PDF/document/report/email payloads, a UUID job ID, one-way handle hash, queue lease/retry metadata, expiry, safe error code, and RLS policies. It does not add filenames, raw IPs, document hashes, plaintext CV text, permanent reports, visitor accounts, or visitor history.
 
-`003_role_request_dedupe.sql` adds a server-generated dedupe HMAC lookup field and the `app.role_request` RLS read context used to acknowledge identical normalized requests within the configured 15-minute window. It stores no CAPTCHA token or secret.
+`003_role_request_dedupe.sql` adds a server-generated dedupe HMAC lookup field and the `app.role_request` RLS read context used to acknowledge identical normalized requests within the configured 15-minute window. `004_public_verification_challenges.sql` adds short-lived one-use public verification rows containing only a peppered cookie-token hash, integer expected answer, and expiry under a dedicated RLS context.
 
 The migration enables and forces RLS on every application table. The application sets the transaction-local admin authorization context only after validating a current session. Failed account changes run in a transaction and roll back both credential and audit changes.
 

@@ -9,15 +9,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/providers.dart';
-import '../../../core/presentation/captcha_challenge.dart';
+import '../../../core/presentation/public_verification_challenge.dart';
 import '../../role_request/application/role_request_view_model.dart';
 import '../../scan/application/scan_state.dart';
 import '../../scan/application/scan_view_model.dart';
 
 const privacyNotice =
     'To support more PDF formats, your CV will be temporarily uploaded to our secure server for processing. The uploaded file, extracted text, analysis report, and any email address you provide will be deleted after processing and report delivery. We do not use your CV for training, advertising, or other purposes.';
-const captchaBlockedNotice =
-    'CAPTCHA could not load. Disable content blockers and reload this page.';
 
 class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.child});
@@ -462,10 +460,8 @@ class ScanPage extends ConsumerStatefulWidget {
 
 class _ScanPageState extends ConsumerState<ScanPage> {
   final emailController = TextEditingController();
-  String? captchaToken;
-  CaptchaRenderStatus captchaStatus = CaptchaRenderStatus.loading;
-  String? captchaError;
-  int captchaGeneration = 0;
+  int? verificationAnswer;
+  int verificationGeneration = 0;
 
   @override
   void dispose() {
@@ -526,11 +522,8 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                                         .setConsent(consent);
                                     if (!consent) {
                                       setState(() {
-                                        captchaToken = null;
-                                        captchaError = null;
-                                        captchaStatus =
-                                            CaptchaRenderStatus.loading;
-                                        captchaGeneration++;
+                                        verificationAnswer = null;
+                                        verificationGeneration++;
                                       });
                                     }
                                   },
@@ -542,7 +535,7 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                           const SizedBox(height: 8),
                           const _FormStepLabel(
                             number: '2',
-                            label: 'CAPTCHA verification',
+                            label: 'Human verification',
                           ),
                           const SizedBox(height: 10),
                           if (!scan.consentGiven)
@@ -553,72 +546,12 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                               ),
                             )
                           else
-                            ref
-                                .watch(publicConfigProvider)
-                                .when(
-                                  loading: () =>
-                                      const LinearProgressIndicator(),
-                                  error: (error, _) => _InlineError(
-                                    message: 'CAPTCHA unavailable: $error',
-                                  ),
-                                  data: (config) =>
-                                      config.captchaSiteKey == null ||
-                                          config.captchaSiteKey!.isEmpty
-                                      ? const _InlineError(
-                                          message:
-                                              'CAPTCHA is not configured. Uploads are unavailable.',
-                                        )
-                                      : Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            CaptchaChallenge(
-                                              key: ValueKey(captchaGeneration),
-                                              siteKey: config.captchaSiteKey!,
-                                              onTokenChanged: (token) {
-                                                if (mounted) {
-                                                  setState(() {
-                                                    captchaToken = token;
-                                                    if (token?.isNotEmpty ==
-                                                        true) {
-                                                      captchaError = null;
-                                                    }
-                                                  });
-                                                }
-                                              },
-                                              onStatusChanged: (status) {
-                                                if (!mounted) return;
-                                                setState(() {
-                                                  captchaStatus = status;
-                                                  captchaError =
-                                                      status ==
-                                                          CaptchaRenderStatus
-                                                              .blocked
-                                                      ? captchaBlockedNotice
-                                                      : null;
-                                                });
-                                              },
-                                            ),
-                                            if (captchaStatus ==
-                                                CaptchaRenderStatus.loading)
-                                              const Padding(
-                                                padding: EdgeInsets.only(
-                                                  top: 4,
-                                                ),
-                                                child: Text('Loading CAPTCHA…'),
-                                              ),
-                                            if (captchaError != null)
-                                              Padding(
-                                                padding: const EdgeInsets.only(
-                                                  top: 8,
-                                                ),
-                                                child: _InlineError(
-                                                  message: captchaError!,
-                                                ),
-                                              ),
-                                          ],
-                                        ),
-                                ),
+                            PublicVerificationChallengeCard(
+                              key: ValueKey(verificationGeneration),
+                              enabled: !scan.busy,
+                              onAnswerChanged: (answer) =>
+                                  setState(() => verificationAnswer = answer),
+                            ),
                           const SizedBox(height: 12),
                           _FormStepLabel(number: '3', label: 'Target role'),
                           const SizedBox(height: 10),
@@ -649,7 +582,7 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                                     scan.busy ||
                                         scan.stage == ScanStage.awaitingEmail ||
                                         !scan.consentGiven ||
-                                        captchaToken?.isNotEmpty != true
+                                        verificationAnswer == null
                                     ? null
                                     : (role) {
                                         if (role == null) return;
@@ -687,7 +620,7 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                                   scan.busy ||
                                       scan.stage == ScanStage.awaitingEmail ||
                                       !scan.consentGiven ||
-                                      captchaToken?.isNotEmpty != true
+                                      verificationAnswer == null
                                   ? null
                                   : (value) {
                                       if (value != null) {
@@ -709,7 +642,7 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                                     scan.stage == ScanStage.awaitingEmail ||
                                     scan.role == null ||
                                     !scan.consentGiven ||
-                                    captchaToken?.isNotEmpty != true
+                                    verificationAnswer == null
                                 ? null
                                 : () => _pick(context, ref),
                             borderRadius: BorderRadius.circular(14),
@@ -742,8 +675,8 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                                   Text(
                                     !scan.consentGiven
                                         ? 'Accept the processing notice first'
-                                        : captchaToken?.isNotEmpty != true
-                                        ? 'Complete CAPTCHA first'
+                                        : verificationAnswer == null
+                                        ? 'Answer the verification question first'
                                         : scan.role == null
                                         ? 'Choose a role first'
                                         : 'Select a PDF to begin',
@@ -845,13 +778,14 @@ class _ScanPageState extends ConsumerState<ScanPage> {
     }
     final uploadBytes = Uint8List.fromList(bytes);
     bytes.fillRange(0, bytes.length, 0);
-    await viewModel.analyze(uploadBytes, captchaToken: captchaToken);
+    await viewModel.analyze(
+      uploadBytes,
+      verificationAnswer: verificationAnswer,
+    );
     if (mounted) {
       setState(() {
-        captchaToken = null;
-        captchaError = null;
-        captchaStatus = CaptchaRenderStatus.loading;
-        captchaGeneration++;
+        verificationAnswer = null;
+        verificationGeneration++;
       });
     }
     if (context.mounted &&
@@ -1736,10 +1670,8 @@ class _RoleRequestPageState extends ConsumerState<RoleRequestPage> {
   final industry = TextEditingController();
   final desiredSkills = TextEditingController();
   final replyEmail = TextEditingController();
-  String? captchaToken;
-  CaptchaRenderStatus captchaStatus = CaptchaRenderStatus.loading;
-  String? captchaError;
-  int captchaGeneration = 0;
+  int? verificationAnswer;
+  int verificationGeneration = 0;
   bool submitting = false;
 
   @override
@@ -1755,7 +1687,6 @@ class _RoleRequestPageState extends ConsumerState<RoleRequestPage> {
   @override
   Widget build(BuildContext context) {
     final message = ref.watch(roleRequestViewModelProvider);
-    final publicConfig = ref.watch(publicConfigProvider);
     return AppShell(
       child: ListView(
         padding: const EdgeInsets.symmetric(vertical: 34),
@@ -1819,68 +1750,17 @@ class _RoleRequestPageState extends ConsumerState<RoleRequestPage> {
                           ),
                         ),
                         const SizedBox(height: 18),
-                        publicConfig.when(
-                          loading: () => const LinearProgressIndicator(),
-                          error: (error, _) => _InlineError(
-                            message: 'CAPTCHA unavailable: $error',
-                          ),
-                          data: (config) =>
-                              config.captchaSiteKey == null ||
-                                  config.captchaSiteKey!.isEmpty
-                              ? const _InlineError(
-                                  message:
-                                      'CAPTCHA is not configured. Requests are unavailable.',
-                                )
-                              : Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    CaptchaChallenge(
-                                      key: ValueKey(captchaGeneration),
-                                      siteKey: config.captchaSiteKey!,
-                                      onTokenChanged: (token) {
-                                        if (mounted) {
-                                          setState(() {
-                                            captchaToken = token;
-                                            if (token?.isNotEmpty == true) {
-                                              captchaError = null;
-                                            }
-                                          });
-                                        }
-                                      },
-                                      onStatusChanged: (status) {
-                                        if (!mounted) return;
-                                        setState(() {
-                                          captchaStatus = status;
-                                          captchaError =
-                                              status ==
-                                                  CaptchaRenderStatus.blocked
-                                              ? captchaBlockedNotice
-                                              : null;
-                                        });
-                                      },
-                                    ),
-                                    if (captchaStatus ==
-                                        CaptchaRenderStatus.loading)
-                                      const Padding(
-                                        padding: EdgeInsets.only(top: 4),
-                                        child: Text('Loading CAPTCHA…'),
-                                      ),
-                                    if (captchaError != null)
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 8),
-                                        child: _InlineError(
-                                          message: captchaError!,
-                                        ),
-                                      ),
-                                  ],
-                                ),
+                        PublicVerificationChallengeCard(
+                          key: ValueKey(verificationGeneration),
+                          enabled: !submitting,
+                          onAnswerChanged: (answer) =>
+                              setState(() => verificationAnswer = answer),
                         ),
                         const SizedBox(height: 12),
                         SizedBox(
                           width: double.infinity,
                           child: FilledButton.icon(
-                            onPressed:
-                                submitting || captchaToken?.isNotEmpty != true
+                            onPressed: submitting || verificationAnswer == null
                                 ? null
                                 : _submit,
                             icon: submitting
@@ -1924,7 +1804,7 @@ class _RoleRequestPageState extends ConsumerState<RoleRequestPage> {
           industry: industry.text,
           desiredSkills: desiredSkills.text,
           replyEmail: replyEmail.text,
-          captchaToken: captchaToken,
+          verificationAnswer: verificationAnswer,
         );
     if (!mounted) return;
     if (accepted) {
@@ -1936,10 +1816,8 @@ class _RoleRequestPageState extends ConsumerState<RoleRequestPage> {
     }
     setState(() {
       submitting = false;
-      captchaToken = null;
-      captchaError = null;
-      captchaStatus = CaptchaRenderStatus.loading;
-      captchaGeneration++;
+      verificationAnswer = null;
+      verificationGeneration++;
     });
   }
 }

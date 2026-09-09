@@ -105,7 +105,6 @@ export async function registerCatalogRoutes(app: FastifyInstance) {
     const result = await pool.query('SELECT donation_url AS "donationUrl", ads_enabled AS "adsEnabled" FROM site_settings WHERE id = 1');
     return {
       ...(result.rows[0] ?? { donationUrl: null, adsEnabled: false }),
-      captchaSiteKey: config.CAPTCHA_SITE_KEY ?? null,
     };
   });
 

@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ready_my_cv_web/app/app.dart';
 import 'package:ready_my_cv_web/app/providers.dart';
 import 'package:ready_my_cv_web/core/domain/repositories.dart';
-import 'package:ready_my_cv_web/core/presentation/captcha_challenge.dart';
+import 'package:ready_my_cv_web/core/presentation/public_verification_challenge.dart';
 import 'package:ready_my_cv_web/features/public/presentation/public_pages.dart';
 
 void main() {
@@ -53,8 +53,8 @@ void main() {
       ProviderScope(
         overrides: [
           publishedCatalogProvider.overrideWith((ref) async => catalog),
-          publicConfigProvider.overrideWith(
-            (ref) async => const PublicConfig(captchaSiteKey: 'test-site-key'),
+          publicVerificationRepositoryProvider.overrideWithValue(
+            _FakePublicVerificationRepository(),
           ),
         ],
         child: const MaterialApp(home: ScanPage()),
@@ -63,14 +63,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('PROCESSING NOTICE'), findsOneWidget);
-    expect(find.text('CAPTCHA VERIFICATION'), findsOneWidget);
+    expect(find.text('HUMAN VERIFICATION'), findsOneWidget);
     expect(find.text('TARGET ROLE'), findsOneWidget);
     expect(find.text('UPLOAD YOUR PDF'), findsOneWidget);
     expect(
       find.text('Accept the processing notice to continue.'),
       findsOneWidget,
     );
-    expect(find.byType(CaptchaChallenge), findsNothing);
+    expect(find.byType(PublicVerificationChallengeCard), findsNothing);
     final initialUploadText = find.text('Accept the processing notice first');
     expect(initialUploadText, findsOneWidget);
     final initialUpload = find
@@ -90,21 +90,68 @@ void main() {
     await tester.tap(consentCheckbox);
     await tester.pumpAndSettle();
 
-    expect(find.byType(CaptchaChallenge), findsOneWidget);
+    expect(find.byType(PublicVerificationChallengeCard), findsOneWidget);
     expect(
       find.text('Accept the processing notice to continue.'),
       findsNothing,
     );
-    final captchaUploadText = find.text('Complete CAPTCHA first');
-    expect(captchaUploadText, findsOneWidget);
-    final captchaUpload = find
-        .ancestor(of: captchaUploadText, matching: find.byType(InkWell))
-        .first;
-    expect(tester.widget<InkWell>(captchaUpload).onTap, isNull);
-
-    final captchaRoleField = tester.widget<DropdownButtonFormField<JobRole>>(
-      find.byType(DropdownButtonFormField<JobRole>),
+    final verificationUploadText = find.text(
+      'Answer the verification question first',
     );
-    expect(captchaRoleField.onChanged, isNull);
+    expect(verificationUploadText, findsOneWidget);
+    final verificationUpload = find
+        .ancestor(of: verificationUploadText, matching: find.byType(InkWell))
+        .first;
+    expect(tester.widget<InkWell>(verificationUpload).onTap, isNull);
+
+    final verificationRoleField = tester
+        .widget<DropdownButtonFormField<JobRole>>(
+          find.byType(DropdownButtonFormField<JobRole>),
+        );
+    expect(verificationRoleField.onChanged, isNull);
   });
+
+  testWidgets('word-math card accepts numeric input and refresh clears it', (
+    tester,
+  ) async {
+    final repository = _FakePublicVerificationRepository();
+    final answers = <int?>[];
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          publicVerificationRepositoryProvider.overrideWithValue(repository),
+        ],
+        child: MaterialApp(
+          home: Scaffold(
+            body: PublicVerificationChallengeCard(onAnswerChanged: answers.add),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('What is eleven plus twelve?'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), '23x');
+    expect(answers.last, 23);
+
+    await tester.tap(find.text('New question'));
+    await tester.pumpAndSettle();
+    expect(answers.last, isNull);
+    expect(find.text('What is thirteen plus fourteen?'), findsOneWidget);
+  });
+}
+
+class _FakePublicVerificationRepository
+    implements PublicVerificationRepository {
+  @override
+  Future<PublicVerificationChallenge> issue() async {
+    _issues += 1;
+    return PublicVerificationChallenge(
+      question: _issues == 1
+          ? 'What is eleven plus twelve?'
+          : 'What is thirteen plus fourteen?',
+    );
+  }
+
+  int _issues = 0;
 }
