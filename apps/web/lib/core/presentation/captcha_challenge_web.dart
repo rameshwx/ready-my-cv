@@ -15,9 +15,6 @@ external void _renderReadyMyCvCaptcha(JSString elementId, JSString siteKey);
 @JS('resetReadyMyCvCaptcha')
 external void _resetReadyMyCvCaptcha(JSString elementId);
 
-@JS('getReadyMyCvCaptchaToken')
-external JSString _getReadyMyCvCaptchaToken(JSString elementId);
-
 int _nextCaptchaId = 0;
 
 class CaptchaChallenge extends StatefulWidget {
@@ -26,13 +23,11 @@ class CaptchaChallenge extends StatefulWidget {
     required this.siteKey,
     required this.onTokenChanged,
     this.onStatusChanged,
-    this.controller,
   });
 
   final String siteKey;
   final ValueChanged<String?> onTokenChanged;
   final ValueChanged<CaptchaRenderStatus>? onStatusChanged;
-  final CaptchaChallengeController? controller;
 
   @override
   State<CaptchaChallenge> createState() => _CaptchaChallengeState();
@@ -70,23 +65,16 @@ class _CaptchaChallengeState extends State<CaptchaChallenge> {
         .on['ready-my-cv-captcha-status-$_elementId']
         .listen((event) {
           final detail = (event as html.CustomEvent).detail;
-          final status = switch (detail) {
-            'loading' => CaptchaRenderStatus.loading,
-            'ready' => CaptchaRenderStatus.ready,
-            _ => CaptchaRenderStatus.blocked,
-          };
+          final status = detail == 'ready'
+              ? CaptchaRenderStatus.ready
+              : CaptchaRenderStatus.blocked;
           widget.onStatusChanged?.call(status);
         });
-    widget.controller?.attach(this, reader: _readToken, reset: _reset);
   }
 
   @override
   void didUpdateWidget(covariant CaptchaChallenge oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.controller != widget.controller) {
-      oldWidget.controller?.detach(this);
-      widget.controller?.attach(this, reader: _readToken, reset: _reset);
-    }
     if (oldWidget.siteKey != widget.siteKey) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _render();
@@ -99,19 +87,11 @@ class _CaptchaChallengeState extends State<CaptchaChallenge> {
     _renderReadyMyCvCaptcha(_elementId.toJS, widget.siteKey.toJS);
   }
 
-  String? _readToken() {
-    final token = _getReadyMyCvCaptchaToken(_elementId.toJS).toDart;
-    return token.isEmpty ? null : token;
-  }
-
-  void _reset() => _resetReadyMyCvCaptcha(_elementId.toJS);
-
   @override
   void dispose() {
     _subscription?.cancel();
     _statusSubscription?.cancel();
-    widget.controller?.detach(this);
-    _reset();
+    _resetReadyMyCvCaptcha(_elementId.toJS);
     super.dispose();
   }
 
