@@ -43,6 +43,7 @@ class ScanViewModel extends _$ScanViewModel {
       role: role,
       seniority: seniority,
       errorMessage: null,
+      errorCode: null,
     );
   }
 
@@ -52,15 +53,32 @@ class ScanViewModel extends _$ScanViewModel {
       role: value ? state.role : null,
       seniority: value ? state.seniority : null,
       errorMessage: null,
+      errorCode: null,
     );
   }
 
   void beginFileSelection() {
-    if (!state.busy) state = state.copyWith(stage: ScanStage.selectingFile);
+    if (!state.busy) {
+      state = state.copyWith(
+        stage: ScanStage.selectingFile,
+        errorMessage: null,
+        errorCode: null,
+      );
+    }
   }
 
   void fileSelectionCancelled() {
-    if (!state.busy) state = state.copyWith(stage: ScanStage.idle);
+    if (!state.busy) {
+      state = state.copyWith(
+        stage: ScanStage.idle,
+        errorMessage: null,
+        errorCode: null,
+      );
+    }
+  }
+
+  void clearError() {
+    state = state.copyWith(errorMessage: null, errorCode: null);
   }
 
   Future<void> analyze(Uint8List bytes, {required String? captchaToken}) async {
@@ -68,6 +86,7 @@ class ScanViewModel extends _$ScanViewModel {
     if (!state.consentGiven) {
       state = state.copyWith(
         errorMessage: 'Please accept the consent notice before uploading.',
+        errorCode: 'CONSENT_REQUIRED',
       );
       return;
     }
@@ -75,6 +94,7 @@ class ScanViewModel extends _$ScanViewModel {
       state = state.copyWith(
         errorMessage:
             'Please complete the CAPTCHA verification before uploading.',
+        errorCode: 'CAPTCHA_REQUIRED',
       );
       return;
     }
@@ -82,6 +102,7 @@ class ScanViewModel extends _$ScanViewModel {
     if (role == null) {
       state = state.copyWith(
         errorMessage: 'Please choose a role before uploading.',
+        errorCode: 'ROLE_REQUIRED',
       );
       return;
     }
@@ -89,6 +110,7 @@ class ScanViewModel extends _$ScanViewModel {
       state = state.copyWith(
         stage: ScanStage.failed,
         errorMessage: 'Please choose a non-empty PDF.',
+        errorCode: 'EMPTY_FILE',
       );
       return;
     }
@@ -96,6 +118,7 @@ class ScanViewModel extends _$ScanViewModel {
       state = state.copyWith(
         stage: ScanStage.failed,
         errorMessage: 'PDF must be 10 MB or smaller.',
+        errorCode: 'FILE_TOO_LARGE',
       );
       return;
     }
@@ -103,6 +126,7 @@ class ScanViewModel extends _$ScanViewModel {
       state = state.copyWith(
         stage: ScanStage.failed,
         errorMessage: 'The selected file is not a valid PDF.',
+        errorCode: 'INVALID_PDF',
       );
       return;
     }
@@ -114,6 +138,7 @@ class ScanViewModel extends _$ScanViewModel {
       stage: ScanStage.uploading,
       busy: true,
       errorMessage: null,
+      errorCode: null,
       result: null,
       jobHandle: null,
       emailSent: false,
@@ -172,6 +197,7 @@ class ScanViewModel extends _$ScanViewModel {
           stage: ScanStage.failed,
           busy: false,
           errorMessage: error.message,
+          errorCode: error.code,
           jobHandle: null,
         );
       }
@@ -182,6 +208,7 @@ class ScanViewModel extends _$ScanViewModel {
           stage: ScanStage.failed,
           busy: false,
           errorMessage: 'The CV could not be processed. Try again.',
+          errorCode: null,
           jobHandle: null,
         );
       }
@@ -297,6 +324,7 @@ class ScanViewModel extends _$ScanViewModel {
           stage: ScanStage.awaitingEmail,
           busy: false,
           errorMessage: error.message,
+          errorCode: error.code,
         );
       }
     } catch (_) {
@@ -304,6 +332,7 @@ class ScanViewModel extends _$ScanViewModel {
         stage: ScanStage.awaitingEmail,
         busy: false,
         errorMessage: 'The report could not be sent. Please try again.',
+        errorCode: null,
       );
     }
   }

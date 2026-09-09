@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:ready_my_cv_web/app/providers.dart';
 import 'package:ready_my_cv_web/core/domain/repositories.dart';
+import 'package:ready_my_cv_web/core/network/app_http_client.dart';
 import 'package:ready_my_cv_web/features/scan/application/scan_view_model.dart';
 
 void main() {
@@ -94,6 +95,31 @@ void main() {
     expect(state.seniority, isNull);
   });
 
+  test('CAPTCHA rejection preserves the selected role and seniority', () async {
+    final repository = _FakeAnalysisRepository()
+      ..uploadError = const AppHttpException(
+        400,
+        'CAPTCHA verification failed.',
+        code: 'CAPTCHA_INVALID',
+      );
+    final container = ProviderContainer(
+      overrides: [analysisJobRepositoryProvider.overrideWithValue(repository)],
+    );
+    addTearDown(container.dispose);
+    final notifier = container.read(scanViewModelProvider.notifier);
+    notifier.setConsent(true);
+    notifier.chooseRole(_role, 'senior');
+    await notifier.analyze(
+      Uint8List.fromList(_pdfBytes),
+      captchaToken: 'test-token',
+    );
+    final state = container.read(scanViewModelProvider);
+    expect(state.errorCode, 'CAPTCHA_INVALID');
+    expect(state.role, _role);
+    expect(state.seniority, 'senior');
+    expect(repository.uploads, 1);
+  });
+
   test(
     'fast backend result reaches the existing completed result contract',
     () async {
@@ -164,6 +190,7 @@ const _pdfBytes = [37, 80, 68, 70, 45, 49, 46, 55];
 class _FakeAnalysisRepository implements AnalysisJobRepository {
   int uploads = 0;
   String? captchaToken;
+  AppHttpException? uploadError;
 
   @override
   Future<AnalysisUpload> upload({
@@ -175,6 +202,7 @@ class _FakeAnalysisRepository implements AnalysisJobRepository {
   }) async {
     uploads += 1;
     this.captchaToken = captchaToken;
+    if (uploadError != null) throw uploadError!;
     return AnalysisUpload(
       handle: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
       status: 'completed',
