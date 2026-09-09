@@ -1724,9 +1724,7 @@ class _EmptyPanel extends StatelessWidget {
 }
 
 class RoleRequestPage extends ConsumerStatefulWidget {
-  const RoleRequestPage({super.key, this.captchaController});
-
-  final CaptchaChallengeController? captchaController;
+  const RoleRequestPage({super.key});
 
   @override
   ConsumerState<RoleRequestPage> createState() => _RoleRequestPageState();
@@ -1738,19 +1736,11 @@ class _RoleRequestPageState extends ConsumerState<RoleRequestPage> {
   final industry = TextEditingController();
   final desiredSkills = TextEditingController();
   final replyEmail = TextEditingController();
-  late final CaptchaChallengeController captchaController;
   String? captchaToken;
   CaptchaRenderStatus captchaStatus = CaptchaRenderStatus.loading;
   String? captchaError;
   int captchaGeneration = 0;
   bool submitting = false;
-
-  @override
-  void initState() {
-    super.initState();
-    captchaController =
-        widget.captchaController ?? CaptchaChallengeController();
-  }
 
   @override
   void dispose() {
@@ -1847,7 +1837,6 @@ class _RoleRequestPageState extends ConsumerState<RoleRequestPage> {
                                     CaptchaChallenge(
                                       key: ValueKey(captchaGeneration),
                                       siteKey: config.captchaSiteKey!,
-                                      controller: captchaController,
                                       onTokenChanged: (token) {
                                         if (mounted) {
                                           setState(() {
@@ -1926,15 +1915,6 @@ class _RoleRequestPageState extends ConsumerState<RoleRequestPage> {
 
   Future<void> _submit() async {
     if (submitting) return;
-    final currentCaptchaToken = captchaController.readToken();
-    if (currentCaptchaToken == null || currentCaptchaToken.isEmpty) {
-      setState(() {
-        captchaToken = null;
-        captchaError =
-            'Your CAPTCHA expired or could not be verified. Please complete it again and resend your request.';
-      });
-      return;
-    }
     setState(() => submitting = true);
     final accepted = await ref
         .read(roleRequestViewModelProvider.notifier)
@@ -1944,7 +1924,7 @@ class _RoleRequestPageState extends ConsumerState<RoleRequestPage> {
           industry: industry.text,
           desiredSkills: desiredSkills.text,
           replyEmail: replyEmail.text,
-          captchaToken: currentCaptchaToken,
+          captchaToken: captchaToken,
         );
     if (!mounted) return;
     if (accepted) {

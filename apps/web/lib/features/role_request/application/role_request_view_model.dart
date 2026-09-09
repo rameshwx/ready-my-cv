@@ -1,7 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../app/providers.dart';
-import '../../../core/network/app_http_client.dart';
 
 part 'role_request_view_model.g.dart';
 
@@ -41,15 +40,6 @@ class RoleRequestViewModel extends _$RoleRequestViewModel {
           ? 'Thank you. This request was already received recently.'
           : 'Thank you. Your request was received.';
       return result.accepted;
-    } on AppHttpException catch (error) {
-      state = switch (error.code) {
-        'CAPTCHA_REQUIRED' || 'CAPTCHA_INVALID' =>
-          'Your CAPTCHA expired or could not be verified. Please complete it again and resend your request.',
-        'CAPTCHA_UNAVAILABLE' =>
-          'CAPTCHA verification is temporarily unavailable. Please try again later.',
-        _ => 'Please try again later.',
-      };
-      return false;
     } catch (_) {
       state = 'Please try again later.';
       return false;

@@ -71,25 +71,17 @@ class AppHttpClient {
       final message = error is Map<String, dynamic>
           ? error['message']?.toString()
           : null;
-      final code = error is Map<String, dynamic>
-          ? error['code']?.toString()
-          : null;
-      throw AppHttpException(
-        response.statusCode,
-        message ?? 'Request failed.',
-        code: code,
-      );
+      throw AppHttpException(response.statusCode, message ?? 'Request failed.');
     }
     return decoded;
   }
 }
 
 class AppHttpException implements Exception {
-  const AppHttpException(this.statusCode, this.message, {this.code});
+  const AppHttpException(this.statusCode, this.message);
 
   final int statusCode;
   final String message;
-  final String? code;
 
   @override
   String toString() => message;

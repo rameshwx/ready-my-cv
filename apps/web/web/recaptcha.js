@@ -138,20 +138,5 @@
     notify(elementId, '');
   };
 
-  window.getReadyMyCvCaptchaToken = function (elementId) {
-    if (
-      widgets[elementId] === undefined ||
-      !window.grecaptcha ||
-      typeof window.grecaptcha.getResponse !== 'function'
-    ) {
-      return '';
-    }
-    try {
-      return window.grecaptcha.getResponse(widgets[elementId]) || '';
-    } catch (_) {
-      return '';
-    }
-  };
-
   loadApi();
 })();
