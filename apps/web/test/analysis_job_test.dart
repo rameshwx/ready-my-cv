@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:catalog_models/catalog_models.dart';
@@ -117,6 +118,44 @@ void main() {
       expect(state.result?.verification.valid, true);
     },
   );
+
+  test(
+    'analysis remains busy until the backend upload attempt resolves',
+    () async {
+      final repository = _FakeAnalysisRepository();
+      final upload = Completer<AnalysisUpload>();
+      repository.uploadCompleter = upload;
+      final container = ProviderContainer(
+        overrides: [
+          analysisJobRepositoryProvider.overrideWithValue(repository),
+        ],
+      );
+      addTearDown(container.dispose);
+      final notifier = container.read(scanViewModelProvider.notifier);
+      notifier.chooseRole(_role, 'senior');
+      notifier.setConsent(true);
+
+      final analysis = notifier.analyze(
+        Uint8List.fromList(_pdfBytes),
+        captchaToken: 'test-token',
+      );
+
+      final pendingState = container.read(scanViewModelProvider);
+      expect(pendingState.busy, true);
+      expect(pendingState.stage, ScanStage.uploading);
+
+      upload.complete(
+        AnalysisUpload(
+          handle: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+          status: 'completed',
+          mode: 'fast',
+          result: _result,
+        ),
+      );
+      await analysis;
+      expect(container.read(scanViewModelProvider).stage, ScanStage.completed);
+    },
+  );
 }
 
 final _role = JobRole(
@@ -164,6 +203,7 @@ const _pdfBytes = [37, 80, 68, 70, 45, 49, 46, 55];
 class _FakeAnalysisRepository implements AnalysisJobRepository {
   int uploads = 0;
   String? captchaToken;
+  Completer<AnalysisUpload>? uploadCompleter;
 
   @override
   Future<AnalysisUpload> upload({
@@ -175,6 +215,8 @@ class _FakeAnalysisRepository implements AnalysisJobRepository {
   }) async {
     uploads += 1;
     this.captchaToken = captchaToken;
+    final pending = uploadCompleter;
+    if (pending != null) return pending.future;
     return AnalysisUpload(
       handle: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
       status: 'completed',

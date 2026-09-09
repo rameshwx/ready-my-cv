@@ -453,6 +453,8 @@ class _TrustCard extends StatelessWidget {
   );
 }
 
+enum _CaptchaSessionPhase { idle, selectingFile, analyzing, finishing }
+
 class ScanPage extends ConsumerStatefulWidget {
   const ScanPage({super.key});
 
@@ -462,10 +464,13 @@ class ScanPage extends ConsumerStatefulWidget {
 
 class _ScanPageState extends ConsumerState<ScanPage> {
   final emailController = TextEditingController();
+  final captchaController = CaptchaChallengeController();
   String? captchaToken;
   CaptchaRenderStatus captchaStatus = CaptchaRenderStatus.loading;
   String? captchaError;
+  String? captchaRetryMessage;
   int captchaGeneration = 0;
+  _CaptchaSessionPhase captchaPhase = _CaptchaSessionPhase.idle;
 
   @override
   void dispose() {
@@ -517,6 +522,7 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                             value: scan.consentGiven,
                             onChanged:
                                 scan.busy ||
+                                    captchaPhase != _CaptchaSessionPhase.idle ||
                                     scan.stage == ScanStage.awaitingEmail
                                 ? null
                                 : (value) {
@@ -528,8 +534,11 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                                       setState(() {
                                         captchaToken = null;
                                         captchaError = null;
+                                        captchaRetryMessage = null;
                                         captchaStatus =
                                             CaptchaRenderStatus.loading;
+                                        captchaPhase =
+                                            _CaptchaSessionPhase.idle;
                                         captchaGeneration++;
                                       });
                                     }
@@ -572,32 +581,63 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
-                                            CaptchaChallenge(
-                                              key: ValueKey(captchaGeneration),
-                                              siteKey: config.captchaSiteKey!,
-                                              onTokenChanged: (token) {
-                                                if (mounted) {
+                                            IgnorePointer(
+                                              ignoring:
+                                                  captchaPhase !=
+                                                      _CaptchaSessionPhase
+                                                          .idle ||
+                                                  scan.busy,
+                                              child: CaptchaChallenge(
+                                                key: ValueKey(
+                                                  captchaGeneration,
+                                                ),
+                                                siteKey: config.captchaSiteKey!,
+                                                controller: captchaController,
+                                                onTokenChanged: (token) {
+                                                  if (!mounted ||
+                                                      captchaPhase !=
+                                                          _CaptchaSessionPhase
+                                                              .idle ||
+                                                      ref
+                                                          .read(
+                                                            scanViewModelProvider,
+                                                          )
+                                                          .busy) {
+                                                    return;
+                                                  }
                                                   setState(() {
                                                     captchaToken = token;
                                                     if (token?.isNotEmpty ==
                                                         true) {
                                                       captchaError = null;
+                                                      captchaRetryMessage =
+                                                          null;
                                                     }
                                                   });
-                                                }
-                                              },
-                                              onStatusChanged: (status) {
-                                                if (!mounted) return;
-                                                setState(() {
-                                                  captchaStatus = status;
-                                                  captchaError =
-                                                      status ==
-                                                          CaptchaRenderStatus
-                                                              .blocked
-                                                      ? captchaBlockedNotice
-                                                      : null;
-                                                });
-                                              },
+                                                },
+                                                onStatusChanged: (status) {
+                                                  if (!mounted ||
+                                                      captchaPhase !=
+                                                          _CaptchaSessionPhase
+                                                              .idle ||
+                                                      ref
+                                                          .read(
+                                                            scanViewModelProvider,
+                                                          )
+                                                          .busy) {
+                                                    return;
+                                                  }
+                                                  setState(() {
+                                                    captchaStatus = status;
+                                                    captchaError =
+                                                        status ==
+                                                            CaptchaRenderStatus
+                                                                .blocked
+                                                        ? captchaBlockedNotice
+                                                        : null;
+                                                  });
+                                                },
+                                              ),
                                             ),
                                             if (captchaStatus ==
                                                 CaptchaRenderStatus.loading)
@@ -607,6 +647,18 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                                                 ),
                                                 child: Text('Loading CAPTCHA…'),
                                               ),
+                                            if (captchaPhase !=
+                                                _CaptchaSessionPhase.idle)
+                                              Padding(
+                                                padding: const EdgeInsets.only(
+                                                  top: 8,
+                                                ),
+                                                child: Text(
+                                                  _captchaPhaseMessage(
+                                                    captchaPhase,
+                                                  ),
+                                                ),
+                                              ),
                                             if (captchaError != null)
                                               Padding(
                                                 padding: const EdgeInsets.only(
@@ -614,6 +666,16 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                                                 ),
                                                 child: _InlineError(
                                                   message: captchaError!,
+                                                ),
+                                              ),
+                                            if (captchaError == null &&
+                                                captchaRetryMessage != null)
+                                              Padding(
+                                                padding: const EdgeInsets.only(
+                                                  top: 8,
+                                                ),
+                                                child: _InlineError(
+                                                  message: captchaRetryMessage!,
                                                 ),
                                               ),
                                           ],
@@ -647,6 +709,8 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                                     .toList(),
                                 onChanged:
                                     scan.busy ||
+                                        captchaPhase !=
+                                            _CaptchaSessionPhase.idle ||
                                         scan.stage == ScanStage.awaitingEmail ||
                                         !scan.consentGiven ||
                                         captchaToken?.isNotEmpty != true
@@ -685,6 +749,8 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                                   .toList(),
                               onChanged:
                                   scan.busy ||
+                                      captchaPhase !=
+                                          _CaptchaSessionPhase.idle ||
                                       scan.stage == ScanStage.awaitingEmail ||
                                       !scan.consentGiven ||
                                       captchaToken?.isNotEmpty != true
@@ -706,6 +772,7 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                           InkWell(
                             onTap:
                                 scan.busy ||
+                                    captchaPhase != _CaptchaSessionPhase.idle ||
                                     scan.stage == ScanStage.awaitingEmail ||
                                     scan.role == null ||
                                     !scan.consentGiven ||
@@ -773,6 +840,7 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                     _ProcessingPanel(
                       scan: scan,
                       emailController: emailController,
+                      onCancel: _cancelAnalysis,
                     ),
                   ],
                   if (scan.stage == ScanStage.completed && scan.emailSent) ...[
@@ -825,14 +893,31 @@ class _ScanPageState extends ConsumerState<ScanPage> {
 
   Future<void> _pick(BuildContext context, WidgetRef ref) async {
     final viewModel = ref.read(scanViewModelProvider.notifier);
+    final tokenBeforePicker = captchaController.readToken();
+    if (tokenBeforePicker?.isNotEmpty != true) {
+      _resetCaptcha(
+        'Your CAPTCHA expired or was not completed. Complete it again before selecting the PDF.',
+      );
+      return;
+    }
+    setState(() {
+      captchaToken = tokenBeforePicker;
+      captchaPhase = _CaptchaSessionPhase.selectingFile;
+    });
     viewModel.beginFileSelection();
     final picked = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf'],
       withData: true,
     );
+    if (!mounted) {
+      final bytes = picked?.files.single.bytes;
+      if (bytes != null) bytes.fillRange(0, bytes.length, 0);
+      return;
+    }
     if (picked == null) {
       viewModel.fileSelectionCancelled();
+      _returnToIdleCaptcha();
       return;
     }
     final bytes = picked.files.single.bytes;
@@ -841,24 +926,85 @@ class _ScanPageState extends ConsumerState<ScanPage> {
         !picked.files.single.name.toLowerCase().endsWith('.pdf')) {
       if (bytes != null) bytes.fillRange(0, bytes.length, 0);
       viewModel.fileSelectionCancelled();
+      _returnToIdleCaptcha();
       return;
     }
     final uploadBytes = Uint8List.fromList(bytes);
     bytes.fillRange(0, bytes.length, 0);
-    await viewModel.analyze(uploadBytes, captchaToken: captchaToken);
+    final tokenBeforeUpload = captchaController.readToken();
+    if (tokenBeforeUpload?.isNotEmpty != true) {
+      uploadBytes.fillRange(0, uploadBytes.length, 0);
+      viewModel.fileSelectionCancelled();
+      _resetCaptcha(
+        'Your CAPTCHA expired while choosing the file. Complete it again and select the PDF again.',
+      );
+      return;
+    }
+
     if (mounted) {
+      setState(() {
+        captchaToken = tokenBeforeUpload;
+        captchaPhase = _CaptchaSessionPhase.analyzing;
+      });
+    }
+
+    try {
+      await viewModel.analyze(uploadBytes, captchaToken: tokenBeforeUpload);
+    } finally {
+      final completed =
+          ref.read(scanViewModelProvider).stage == ScanStage.completed &&
+          ref.read(scanViewModelProvider).result != null;
+      _finishCaptchaAttempt();
+      if (completed && context.mounted) {
+        context.go('/results');
+      }
+    }
+  }
+
+  String _captchaPhaseMessage(_CaptchaSessionPhase phase) => switch (phase) {
+    _CaptchaSessionPhase.selectingFile =>
+      'CAPTCHA verified. Select your PDF to begin the assessment.',
+    _CaptchaSessionPhase.analyzing || _CaptchaSessionPhase.finishing =>
+      'CAPTCHA verified for this upload. The form stays locked until analysis finishes.',
+    _CaptchaSessionPhase.idle => '',
+  };
+
+  void _returnToIdleCaptcha() {
+    if (!mounted) return;
+    setState(() => captchaPhase = _CaptchaSessionPhase.idle);
+  }
+
+  void _finishCaptchaAttempt() {
+    if (!mounted || captchaPhase == _CaptchaSessionPhase.idle) return;
+    setState(() => captchaPhase = _CaptchaSessionPhase.finishing);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || captchaPhase != _CaptchaSessionPhase.finishing) return;
       setState(() {
         captchaToken = null;
         captchaError = null;
+        captchaRetryMessage = null;
         captchaStatus = CaptchaRenderStatus.loading;
+        captchaPhase = _CaptchaSessionPhase.idle;
         captchaGeneration++;
       });
-    }
-    if (context.mounted &&
-        ref.read(scanViewModelProvider).stage == ScanStage.completed &&
-        ref.read(scanViewModelProvider).result != null) {
-      context.go('/results');
-    }
+    });
+  }
+
+  void _resetCaptcha(String message) {
+    if (!mounted) return;
+    setState(() {
+      captchaToken = null;
+      captchaError = null;
+      captchaRetryMessage = message;
+      captchaStatus = CaptchaRenderStatus.loading;
+      captchaPhase = _CaptchaSessionPhase.idle;
+      captchaGeneration++;
+    });
+  }
+
+  void _cancelAnalysis() {
+    ref.read(scanViewModelProvider.notifier).cancel();
+    _finishCaptchaAttempt();
   }
 }
 
@@ -895,10 +1041,15 @@ class _FormStepLabel extends StatelessWidget {
 }
 
 class _ProcessingPanel extends StatelessWidget {
-  const _ProcessingPanel({required this.scan, required this.emailController});
+  const _ProcessingPanel({
+    required this.scan,
+    required this.emailController,
+    required this.onCancel,
+  });
 
   final ScanState scan;
   final TextEditingController emailController;
+  final VoidCallback onCancel;
 
   @override
   Widget build(BuildContext context) {
@@ -938,7 +1089,7 @@ class _ProcessingPanel extends StatelessWidget {
                 if (!isEmail)
                   IconButton(
                     tooltip: 'Cancel assessment',
-                    onPressed: () => _cancel(context),
+                    onPressed: onCancel,
                     icon: const Icon(Icons.close),
                   ),
               ],
@@ -1037,7 +1188,7 @@ class _ProcessingPanel extends StatelessWidget {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton.icon(
-                      onPressed: () => _cancel(context),
+                      onPressed: onCancel,
                       icon: const Icon(Icons.delete_outline, size: 17),
                       label: const Text('Cancel and purge'),
                     ),
@@ -1048,13 +1199,6 @@ class _ProcessingPanel extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  void _cancel(BuildContext context) {
-    // The parent owns the provider; this callback is replaced by the button
-    // finder in the page through the nearest notifier-aware context.
-    final container = ProviderScope.containerOf(context, listen: false);
-    container.read(scanViewModelProvider.notifier).cancel();
   }
 
   void _sendEmail(BuildContext context) {
