@@ -15,6 +15,9 @@ external void _renderReadyMyCvCaptcha(JSString elementId, JSString siteKey);
 @JS('resetReadyMyCvCaptcha')
 external void _resetReadyMyCvCaptcha(JSString elementId);
 
+@JS('getReadyMyCvCaptchaToken')
+external JSString _getReadyMyCvCaptchaToken(JSString elementId);
+
 int _nextCaptchaId = 0;
 
 class CaptchaChallenge extends StatefulWidget {
@@ -23,11 +26,13 @@ class CaptchaChallenge extends StatefulWidget {
     required this.siteKey,
     required this.onTokenChanged,
     this.onStatusChanged,
+    this.controller,
   });
 
   final String siteKey;
   final ValueChanged<String?> onTokenChanged;
   final ValueChanged<CaptchaRenderStatus>? onStatusChanged;
+  final CaptchaChallengeController? controller;
 
   @override
   State<CaptchaChallenge> createState() => _CaptchaChallengeState();
@@ -36,8 +41,10 @@ class CaptchaChallenge extends StatefulWidget {
 class _CaptchaChallengeState extends State<CaptchaChallenge> {
   late final String _elementId;
   late final String _viewType;
+  late final CaptchaTokenReader _tokenReader;
   StreamSubscription<html.Event>? _subscription;
   StreamSubscription<html.Event>? _statusSubscription;
+  void Function()? _unbindController;
 
   @override
   void initState() {
@@ -45,6 +52,8 @@ class _CaptchaChallengeState extends State<CaptchaChallenge> {
     final id = _nextCaptchaId++;
     _elementId = 'ready-my-cv-captcha-$id';
     _viewType = _elementId;
+    _tokenReader = _readToken;
+    _unbindController = widget.controller?.bind(_tokenReader);
     ui_web.platformViewRegistry.registerViewFactory(_viewType, (viewId) {
       return html.DivElement()
         ..id = _elementId
@@ -75,11 +84,20 @@ class _CaptchaChallengeState extends State<CaptchaChallenge> {
   @override
   void didUpdateWidget(covariant CaptchaChallenge oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      _unbindController?.call();
+      _unbindController = widget.controller?.bind(_tokenReader);
+    }
     if (oldWidget.siteKey != widget.siteKey) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _render();
       });
     }
+  }
+
+  String? _readToken() {
+    final token = _getReadyMyCvCaptchaToken(_elementId.toJS).toDart;
+    return token.isEmpty ? null : token;
   }
 
   void _render() {
@@ -91,6 +109,7 @@ class _CaptchaChallengeState extends State<CaptchaChallenge> {
   void dispose() {
     _subscription?.cancel();
     _statusSubscription?.cancel();
+    _unbindController?.call();
     _resetReadyMyCvCaptcha(_elementId.toJS);
     super.dispose();
   }
