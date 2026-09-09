@@ -508,7 +508,7 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                         children: [
                           const _FormStepLabel(
                             number: '1',
-                            label: 'Before you upload',
+                            label: 'Processing notice',
                           ),
                           const SizedBox(height: 10),
                           const PrivacyBanner(child: Text(privacyNotice)),
@@ -540,71 +540,87 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                             controlAffinity: ListTileControlAffinity.leading,
                           ),
                           const SizedBox(height: 8),
-                          ref
-                              .watch(publicConfigProvider)
-                              .when(
-                                loading: () => const LinearProgressIndicator(),
-                                error: (error, _) => _InlineError(
-                                  message: 'CAPTCHA unavailable: $error',
-                                ),
-                                data: (config) =>
-                                    config.captchaSiteKey == null ||
-                                        config.captchaSiteKey!.isEmpty
-                                    ? const _InlineError(
-                                        message:
-                                            'CAPTCHA is not configured. Uploads are unavailable.',
-                                      )
-                                    : Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          CaptchaChallenge(
-                                            key: ValueKey(captchaGeneration),
-                                            siteKey: config.captchaSiteKey!,
-                                            onTokenChanged: (token) {
-                                              if (mounted) {
-                                                setState(() {
-                                                  captchaToken = token;
-                                                  if (token?.isNotEmpty ==
-                                                      true) {
-                                                    captchaError = null;
-                                                  }
-                                                });
-                                              }
-                                            },
-                                            onStatusChanged: (status) {
-                                              if (!mounted) return;
-                                              setState(() {
-                                                captchaStatus = status;
-                                                captchaError =
-                                                    status ==
-                                                        CaptchaRenderStatus
-                                                            .blocked
-                                                    ? captchaBlockedNotice
-                                                    : null;
-                                              });
-                                            },
-                                          ),
-                                          if (captchaStatus ==
-                                              CaptchaRenderStatus.loading)
-                                            const Padding(
-                                              padding: EdgeInsets.only(top: 4),
-                                              child: Text('Loading CAPTCHA…'),
-                                            ),
-                                          if (captchaError != null)
-                                            Padding(
-                                              padding: const EdgeInsets.only(
-                                                top: 8,
-                                              ),
-                                              child: _InlineError(
-                                                message: captchaError!,
-                                              ),
-                                            ),
-                                        ],
-                                      ),
+                          const _FormStepLabel(
+                            number: '2',
+                            label: 'CAPTCHA verification',
+                          ),
+                          const SizedBox(height: 10),
+                          if (!scan.consentGiven)
+                            const Padding(
+                              padding: EdgeInsets.only(bottom: 4),
+                              child: Text(
+                                'Accept the processing notice to continue.',
                               ),
+                            )
+                          else
+                            ref
+                                .watch(publicConfigProvider)
+                                .when(
+                                  loading: () =>
+                                      const LinearProgressIndicator(),
+                                  error: (error, _) => _InlineError(
+                                    message: 'CAPTCHA unavailable: $error',
+                                  ),
+                                  data: (config) =>
+                                      config.captchaSiteKey == null ||
+                                          config.captchaSiteKey!.isEmpty
+                                      ? const _InlineError(
+                                          message:
+                                              'CAPTCHA is not configured. Uploads are unavailable.',
+                                        )
+                                      : Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            CaptchaChallenge(
+                                              key: ValueKey(captchaGeneration),
+                                              siteKey: config.captchaSiteKey!,
+                                              onTokenChanged: (token) {
+                                                if (mounted) {
+                                                  setState(() {
+                                                    captchaToken = token;
+                                                    if (token?.isNotEmpty ==
+                                                        true) {
+                                                      captchaError = null;
+                                                    }
+                                                  });
+                                                }
+                                              },
+                                              onStatusChanged: (status) {
+                                                if (!mounted) return;
+                                                setState(() {
+                                                  captchaStatus = status;
+                                                  captchaError =
+                                                      status ==
+                                                          CaptchaRenderStatus
+                                                              .blocked
+                                                      ? captchaBlockedNotice
+                                                      : null;
+                                                });
+                                              },
+                                            ),
+                                            if (captchaStatus ==
+                                                CaptchaRenderStatus.loading)
+                                              const Padding(
+                                                padding: EdgeInsets.only(
+                                                  top: 4,
+                                                ),
+                                                child: Text('Loading CAPTCHA…'),
+                                              ),
+                                            if (captchaError != null)
+                                              Padding(
+                                                padding: const EdgeInsets.only(
+                                                  top: 8,
+                                                ),
+                                                child: _InlineError(
+                                                  message: captchaError!,
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                ),
                           const SizedBox(height: 12),
-                          _FormStepLabel(number: '2', label: 'Target role'),
+                          _FormStepLabel(number: '3', label: 'Target role'),
                           const SizedBox(height: 10),
                           catalog.when(
                             loading: () => const LinearProgressIndicator(),
@@ -685,7 +701,7 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                             ),
                           ],
                           const SizedBox(height: 24),
-                          _FormStepLabel(number: '3', label: 'Upload your PDF'),
+                          _FormStepLabel(number: '4', label: 'Upload your PDF'),
                           const SizedBox(height: 10),
                           InkWell(
                             onTap:
@@ -724,12 +740,13 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                                   ),
                                   const SizedBox(height: 12),
                                   Text(
-                                    scan.role == null
+                                    !scan.consentGiven
+                                        ? 'Accept the processing notice first'
+                                        : captchaToken?.isNotEmpty != true
+                                        ? 'Complete CAPTCHA first'
+                                        : scan.role == null
                                         ? 'Choose a role first'
-                                        : scan.consentGiven &&
-                                              captchaToken?.isNotEmpty == true
-                                        ? 'Select a PDF to begin'
-                                        : 'Complete consent and CAPTCHA to upload',
+                                        : 'Select a PDF to begin',
                                     style: const TextStyle(
                                       fontWeight: FontWeight.w700,
                                     ),

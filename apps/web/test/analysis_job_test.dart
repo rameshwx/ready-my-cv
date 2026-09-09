@@ -46,6 +46,54 @@ void main() {
     expect(repository.uploads, 0);
   });
 
+  test('CAPTCHA is validated before role selection', () async {
+    final repository = _FakeAnalysisRepository();
+    final container = ProviderContainer(
+      overrides: [analysisJobRepositoryProvider.overrideWithValue(repository)],
+    );
+    addTearDown(container.dispose);
+    final notifier = container.read(scanViewModelProvider.notifier);
+    notifier.setConsent(true);
+    await notifier.analyze(Uint8List.fromList(_pdfBytes), captchaToken: null);
+    expect(
+      container.read(scanViewModelProvider).errorMessage,
+      contains('CAPTCHA'),
+    );
+    expect(repository.uploads, 0);
+  });
+
+  test('role selection is required after consent and CAPTCHA', () async {
+    final repository = _FakeAnalysisRepository();
+    final container = ProviderContainer(
+      overrides: [analysisJobRepositoryProvider.overrideWithValue(repository)],
+    );
+    addTearDown(container.dispose);
+    final notifier = container.read(scanViewModelProvider.notifier);
+    notifier.setConsent(true);
+    await notifier.analyze(
+      Uint8List.fromList(_pdfBytes),
+      captchaToken: 'test-token',
+    );
+    expect(
+      container.read(scanViewModelProvider).errorMessage,
+      contains('role'),
+    );
+    expect(repository.uploads, 0);
+  });
+
+  test('revoking consent clears downstream selections', () {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+    final notifier = container.read(scanViewModelProvider.notifier);
+    notifier.setConsent(true);
+    notifier.chooseRole(_role, 'senior');
+    notifier.setConsent(false);
+    final state = container.read(scanViewModelProvider);
+    expect(state.consentGiven, false);
+    expect(state.role, isNull);
+    expect(state.seniority, isNull);
+  });
+
   test(
     'fast backend result reaches the existing completed result contract',
     () async {

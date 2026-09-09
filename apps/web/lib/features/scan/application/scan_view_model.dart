@@ -47,7 +47,12 @@ class ScanViewModel extends _$ScanViewModel {
   }
 
   void setConsent(bool value) {
-    state = state.copyWith(consentGiven: value, errorMessage: null);
+    state = state.copyWith(
+      consentGiven: value,
+      role: value ? state.role : null,
+      seniority: value ? state.seniority : null,
+      errorMessage: null,
+    );
   }
 
   void beginFileSelection() {
@@ -59,8 +64,7 @@ class ScanViewModel extends _$ScanViewModel {
   }
 
   Future<void> analyze(Uint8List bytes, {required String? captchaToken}) async {
-    final role = state.role;
-    if (role == null || state.busy) return;
+    if (state.busy) return;
     if (!state.consentGiven) {
       state = state.copyWith(
         errorMessage: 'Please accept the consent notice before uploading.',
@@ -71,6 +75,13 @@ class ScanViewModel extends _$ScanViewModel {
       state = state.copyWith(
         errorMessage:
             'Please complete the CAPTCHA verification before uploading.',
+      );
+      return;
+    }
+    final role = state.role;
+    if (role == null) {
+      state = state.copyWith(
+        errorMessage: 'Please choose a role before uploading.',
       );
       return;
     }
