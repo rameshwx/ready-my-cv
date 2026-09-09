@@ -41,10 +41,8 @@ class CaptchaChallenge extends StatefulWidget {
 class _CaptchaChallengeState extends State<CaptchaChallenge> {
   late final String _elementId;
   late final String _viewType;
-  late final CaptchaTokenReader _tokenReader;
   StreamSubscription<html.Event>? _subscription;
   StreamSubscription<html.Event>? _statusSubscription;
-  void Function()? _unbindController;
 
   @override
   void initState() {
@@ -52,8 +50,7 @@ class _CaptchaChallengeState extends State<CaptchaChallenge> {
     final id = _nextCaptchaId++;
     _elementId = 'ready-my-cv-captcha-$id';
     _viewType = _elementId;
-    _tokenReader = _readToken;
-    _unbindController = widget.controller?.bind(_tokenReader);
+    widget.controller?.bind(_readToken);
     ui_web.platformViewRegistry.registerViewFactory(_viewType, (viewId) {
       return html.DivElement()
         ..id = _elementId
@@ -74,7 +71,9 @@ class _CaptchaChallengeState extends State<CaptchaChallenge> {
         .on['ready-my-cv-captcha-status-$_elementId']
         .listen((event) {
           final detail = (event as html.CustomEvent).detail;
-          final status = captchaRenderStatusFromBridgeValue(detail);
+          final status = detail == 'ready'
+              ? CaptchaRenderStatus.ready
+              : CaptchaRenderStatus.blocked;
           widget.onStatusChanged?.call(status);
         });
   }
@@ -83,8 +82,8 @@ class _CaptchaChallengeState extends State<CaptchaChallenge> {
   void didUpdateWidget(covariant CaptchaChallenge oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.controller != widget.controller) {
-      _unbindController?.call();
-      _unbindController = widget.controller?.bind(_tokenReader);
+      oldWidget.controller?.unbind();
+      widget.controller?.bind(_readToken);
     }
     if (oldWidget.siteKey != widget.siteKey) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -107,7 +106,7 @@ class _CaptchaChallengeState extends State<CaptchaChallenge> {
   void dispose() {
     _subscription?.cancel();
     _statusSubscription?.cancel();
-    _unbindController?.call();
+    widget.controller?.unbind();
     _resetReadyMyCvCaptcha(_elementId.toJS);
     super.dispose();
   }
