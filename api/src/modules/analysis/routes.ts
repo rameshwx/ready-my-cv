@@ -78,15 +78,7 @@ export async function registerAnalysisRoutes(app: FastifyInstance) {
         pollAfterMs: 1500,
       });
     } catch (error) {
-      if (error instanceof CaptchaError) {
-        request.log.warn(
-          { captchaProviderErrorCodes: error.providerErrorCodes },
-          'captcha verification rejected',
-        );
-        return reply
-          .code(error.code === 'CAPTCHA_UNAVAILABLE' ? 503 : 400)
-          .send(errorEnvelope(error.code, error.message, undefined, request.id));
-      }
+      if (error instanceof CaptchaError) return sendError(reply, error.code === 'CAPTCHA_UNAVAILABLE' ? 503 : 400, error.code, error.message);
       if (error instanceof JobServiceError) return sendError(reply, error.statusCode, error.code, error.message);
       if (isMultipartLimitError(error)) return sendError(reply, 413, 'FILE_TOO_LARGE', 'PDF files must be 10 MB or smaller.');
       return sendError(reply, 400, 'INVALID_UPLOAD', 'The upload could not be accepted.');

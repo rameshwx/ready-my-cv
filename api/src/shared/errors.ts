@@ -5,13 +5,12 @@ export const errorEnvelope = (
   code: string,
   message: string,
   fieldErrors?: Record<string, string>,
-  correlationId?: string,
 ) => ({
   error: {
     code,
     message,
     ...(fieldErrors ? { fieldErrors } : {}),
-    correlationId: correlationId ?? randomUUID(),
+    correlationId: randomUUID(),
   },
 });
 

@@ -51,13 +51,7 @@ export async function registerRoleRequestRoutes(app: FastifyInstance) {
       return reply.code(202).send(result);
     } catch (error) {
       if (error instanceof CaptchaError) {
-        request.log.warn(
-          { captchaProviderErrorCodes: error.providerErrorCodes },
-          'captcha verification rejected',
-        );
-        return reply
-          .code(error.code === 'CAPTCHA_UNAVAILABLE' ? 503 : 400)
-          .send(errorEnvelope(error.code, error.message, undefined, request.id));
+        return reply.code(error.code === 'CAPTCHA_UNAVAILABLE' ? 503 : 400).send(errorEnvelope(error.code, error.message));
       }
       throw error;
     }
