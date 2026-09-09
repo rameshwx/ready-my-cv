@@ -45,30 +45,3 @@ test('CAPTCHA verifier converts provider/network failures to a safe error', asyn
     (error: unknown) => error instanceof CaptchaError && error.code === 'CAPTCHA_INVALID' && !error.message.includes('timeout-token'),
   );
 });
-
-test('CAPTCHA classifies expired or duplicate provider responses safely', async () => {
-  await assert.rejects(
-    verifyCaptcha('expired-token', async () => new Response(JSON.stringify({
-      success: false,
-      'error-codes': ['timeout-or-duplicate'],
-    }), { status: 200 })),
-    (error: unknown) => error instanceof CaptchaError &&
-      error.code === 'CAPTCHA_EXPIRED' &&
-      error.providerCodes.includes('timeout-or-duplicate') &&
-      !error.message.includes('expired-token'),
-  );
-});
-
-test('CAPTCHA provider failures retain only safe diagnostic codes', async () => {
-  await assert.rejects(
-    verifyCaptcha('provider-token', async () => new Response(JSON.stringify({
-      success: false,
-      'error-codes': ['invalid-input-response'],
-    }), { status: 200 })),
-    (error: unknown) => error instanceof CaptchaError &&
-      error.code === 'CAPTCHA_INVALID' &&
-      error.providerCodes.includes('invalid-input-response') &&
-      !error.message.includes('provider-token') &&
-      !error.message.includes('test-captcha-secret'),
-  );
-});

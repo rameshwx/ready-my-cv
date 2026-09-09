@@ -13,7 +13,6 @@ abstract class ScanState with _$ScanState {
     AnalysisResult? result,
     String? jobHandle,
     String? errorMessage,
-    String? errorCode,
     @Default(false) bool consentGiven,
     @Default(false) bool emailSent,
     @Default(false) bool busy,

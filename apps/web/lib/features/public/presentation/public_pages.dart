@@ -462,11 +462,9 @@ class ScanPage extends ConsumerStatefulWidget {
 
 class _ScanPageState extends ConsumerState<ScanPage> {
   final emailController = TextEditingController();
-  final captchaController = CaptchaChallengeController();
   String? captchaToken;
   CaptchaRenderStatus captchaStatus = CaptchaRenderStatus.loading;
   String? captchaError;
-  String? captchaRetryMessage;
   int captchaGeneration = 0;
 
   @override
@@ -530,7 +528,6 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                                       setState(() {
                                         captchaToken = null;
                                         captchaError = null;
-                                        captchaRetryMessage = null;
                                         captchaStatus =
                                             CaptchaRenderStatus.loading;
                                         captchaGeneration++;
@@ -578,7 +575,6 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                                             CaptchaChallenge(
                                               key: ValueKey(captchaGeneration),
                                               siteKey: config.captchaSiteKey!,
-                                              controller: captchaController,
                                               onTokenChanged: (token) {
                                                 if (mounted) {
                                                   setState(() {
@@ -586,8 +582,6 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                                                     if (token?.isNotEmpty ==
                                                         true) {
                                                       captchaError = null;
-                                                      captchaRetryMessage =
-                                                          null;
                                                     }
                                                   });
                                                 }
@@ -601,7 +595,7 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                                                           CaptchaRenderStatus
                                                               .blocked
                                                       ? captchaBlockedNotice
-                                                      : captchaError;
+                                                      : null;
                                                 });
                                               },
                                             ),
@@ -613,16 +607,13 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                                                 ),
                                                 child: Text('Loading CAPTCHA…'),
                                               ),
-                                            if (captchaError != null ||
-                                                captchaRetryMessage != null)
+                                            if (captchaError != null)
                                               Padding(
                                                 padding: const EdgeInsets.only(
                                                   top: 8,
                                                 ),
                                                 child: _InlineError(
-                                                  message:
-                                                      captchaError ??
-                                                      captchaRetryMessage!,
+                                                  message: captchaError!,
                                                 ),
                                               ),
                                           ],
@@ -834,14 +825,6 @@ class _ScanPageState extends ConsumerState<ScanPage> {
 
   Future<void> _pick(BuildContext context, WidgetRef ref) async {
     final viewModel = ref.read(scanViewModelProvider.notifier);
-    final tokenBeforePicker = captchaController.readToken();
-    if (tokenBeforePicker?.isNotEmpty != true) {
-      _resetCaptcha(
-        'Your CAPTCHA expired or was not completed. Complete it again before selecting the PDF.',
-      );
-      return;
-    }
-    captchaToken = tokenBeforePicker;
     viewModel.beginFileSelection();
     final picked = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -862,44 +845,20 @@ class _ScanPageState extends ConsumerState<ScanPage> {
     }
     final uploadBytes = Uint8List.fromList(bytes);
     bytes.fillRange(0, bytes.length, 0);
-    final tokenBeforeUpload = captchaController.readToken();
-    if (tokenBeforeUpload?.isNotEmpty != true) {
-      uploadBytes.fillRange(0, uploadBytes.length, 0);
-      viewModel.fileSelectionCancelled();
-      _resetCaptcha(
-        'Your CAPTCHA expired while choosing the file. Complete it again and select the PDF again.',
-      );
-      return;
-    }
-    captchaToken = tokenBeforeUpload;
-    await viewModel.analyze(uploadBytes, captchaToken: tokenBeforeUpload);
-    final result = ref.read(scanViewModelProvider);
-    if (result.errorCode == 'CAPTCHA_REQUIRED' ||
-        result.errorCode == 'CAPTCHA_INVALID' ||
-        result.errorCode == 'CAPTCHA_EXPIRED') {
-      viewModel.clearError();
-      _resetCaptcha(
-        'CAPTCHA verification expired or was rejected. Complete it again before retrying the upload.',
-      );
-    } else {
-      _resetCaptcha(null);
+    await viewModel.analyze(uploadBytes, captchaToken: captchaToken);
+    if (mounted) {
+      setState(() {
+        captchaToken = null;
+        captchaError = null;
+        captchaStatus = CaptchaRenderStatus.loading;
+        captchaGeneration++;
+      });
     }
     if (context.mounted &&
         ref.read(scanViewModelProvider).stage == ScanStage.completed &&
         ref.read(scanViewModelProvider).result != null) {
       context.go('/results');
     }
-  }
-
-  void _resetCaptcha(String? message) {
-    if (!mounted) return;
-    setState(() {
-      captchaToken = null;
-      captchaError = null;
-      captchaRetryMessage = message;
-      captchaStatus = CaptchaRenderStatus.loading;
-      captchaGeneration++;
-    });
   }
 }
 

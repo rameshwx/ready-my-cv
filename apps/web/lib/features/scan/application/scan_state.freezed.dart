@@ -14,7 +14,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ScanState {
 
- ScanStage get stage; JobRole? get role; String? get seniority; AnalysisResult? get result; String? get jobHandle; String? get errorMessage; String? get errorCode; bool get consentGiven; bool get emailSent; bool get busy;
+ ScanStage get stage; JobRole? get role; String? get seniority; AnalysisResult? get result; String? get jobHandle; String? get errorMessage; bool get consentGiven; bool get emailSent; bool get busy;
 /// Create a copy of ScanState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +25,16 @@ $ScanStateCopyWith<ScanState> get copyWith => _$ScanStateCopyWithImpl<ScanState>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ScanState&&(identical(other.stage, stage) || other.stage == stage)&&(identical(other.role, role) || other.role == role)&&(identical(other.seniority, seniority) || other.seniority == seniority)&&(identical(other.result, result) || other.result == result)&&(identical(other.jobHandle, jobHandle) || other.jobHandle == jobHandle)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage)&&(identical(other.errorCode, errorCode) || other.errorCode == errorCode)&&(identical(other.consentGiven, consentGiven) || other.consentGiven == consentGiven)&&(identical(other.emailSent, emailSent) || other.emailSent == emailSent)&&(identical(other.busy, busy) || other.busy == busy));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ScanState&&(identical(other.stage, stage) || other.stage == stage)&&(identical(other.role, role) || other.role == role)&&(identical(other.seniority, seniority) || other.seniority == seniority)&&(identical(other.result, result) || other.result == result)&&(identical(other.jobHandle, jobHandle) || other.jobHandle == jobHandle)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage)&&(identical(other.consentGiven, consentGiven) || other.consentGiven == consentGiven)&&(identical(other.emailSent, emailSent) || other.emailSent == emailSent)&&(identical(other.busy, busy) || other.busy == busy));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,stage,role,seniority,result,jobHandle,errorMessage,errorCode,consentGiven,emailSent,busy);
+int get hashCode => Object.hash(runtimeType,stage,role,seniority,result,jobHandle,errorMessage,consentGiven,emailSent,busy);
 
 @override
 String toString() {
-  return 'ScanState(stage: $stage, role: $role, seniority: $seniority, result: $result, jobHandle: $jobHandle, errorMessage: $errorMessage, errorCode: $errorCode, consentGiven: $consentGiven, emailSent: $emailSent, busy: $busy)';
+  return 'ScanState(stage: $stage, role: $role, seniority: $seniority, result: $result, jobHandle: $jobHandle, errorMessage: $errorMessage, consentGiven: $consentGiven, emailSent: $emailSent, busy: $busy)';
 }
 
 
@@ -45,7 +45,7 @@ abstract mixin class $ScanStateCopyWith<$Res>  {
   factory $ScanStateCopyWith(ScanState value, $Res Function(ScanState) _then) = _$ScanStateCopyWithImpl;
 @useResult
 $Res call({
- ScanStage stage, JobRole? role, String? seniority, AnalysisResult? result, String? jobHandle, String? errorMessage, String? errorCode, bool consentGiven, bool emailSent, bool busy
+ ScanStage stage, JobRole? role, String? seniority, AnalysisResult? result, String? jobHandle, String? errorMessage, bool consentGiven, bool emailSent, bool busy
 });
 
 
@@ -62,7 +62,7 @@ class _$ScanStateCopyWithImpl<$Res>
 
 /// Create a copy of ScanState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? stage = null,Object? role = freezed,Object? seniority = freezed,Object? result = freezed,Object? jobHandle = freezed,Object? errorMessage = freezed,Object? errorCode = freezed,Object? consentGiven = null,Object? emailSent = null,Object? busy = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? stage = null,Object? role = freezed,Object? seniority = freezed,Object? result = freezed,Object? jobHandle = freezed,Object? errorMessage = freezed,Object? consentGiven = null,Object? emailSent = null,Object? busy = null,}) {
   return _then(_self.copyWith(
 stage: null == stage ? _self.stage : stage // ignore: cast_nullable_to_non_nullable
 as ScanStage,role: freezed == role ? _self.role : role // ignore: cast_nullable_to_non_nullable
@@ -70,7 +70,6 @@ as JobRole?,seniority: freezed == seniority ? _self.seniority : seniority // ign
 as String?,result: freezed == result ? _self.result : result // ignore: cast_nullable_to_non_nullable
 as AnalysisResult?,jobHandle: freezed == jobHandle ? _self.jobHandle : jobHandle // ignore: cast_nullable_to_non_nullable
 as String?,errorMessage: freezed == errorMessage ? _self.errorMessage : errorMessage // ignore: cast_nullable_to_non_nullable
-as String?,errorCode: freezed == errorCode ? _self.errorCode : errorCode // ignore: cast_nullable_to_non_nullable
 as String?,consentGiven: null == consentGiven ? _self.consentGiven : consentGiven // ignore: cast_nullable_to_non_nullable
 as bool,emailSent: null == emailSent ? _self.emailSent : emailSent // ignore: cast_nullable_to_non_nullable
 as bool,busy: null == busy ? _self.busy : busy // ignore: cast_nullable_to_non_nullable
@@ -183,10 +182,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ScanStage stage,  JobRole? role,  String? seniority,  AnalysisResult? result,  String? jobHandle,  String? errorMessage,  String? errorCode,  bool consentGiven,  bool emailSent,  bool busy)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ScanStage stage,  JobRole? role,  String? seniority,  AnalysisResult? result,  String? jobHandle,  String? errorMessage,  bool consentGiven,  bool emailSent,  bool busy)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ScanState() when $default != null:
-return $default(_that.stage,_that.role,_that.seniority,_that.result,_that.jobHandle,_that.errorMessage,_that.errorCode,_that.consentGiven,_that.emailSent,_that.busy);case _:
+return $default(_that.stage,_that.role,_that.seniority,_that.result,_that.jobHandle,_that.errorMessage,_that.consentGiven,_that.emailSent,_that.busy);case _:
   return orElse();
 
 }
@@ -204,10 +203,10 @@ return $default(_that.stage,_that.role,_that.seniority,_that.result,_that.jobHan
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ScanStage stage,  JobRole? role,  String? seniority,  AnalysisResult? result,  String? jobHandle,  String? errorMessage,  String? errorCode,  bool consentGiven,  bool emailSent,  bool busy)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ScanStage stage,  JobRole? role,  String? seniority,  AnalysisResult? result,  String? jobHandle,  String? errorMessage,  bool consentGiven,  bool emailSent,  bool busy)  $default,) {final _that = this;
 switch (_that) {
 case _ScanState():
-return $default(_that.stage,_that.role,_that.seniority,_that.result,_that.jobHandle,_that.errorMessage,_that.errorCode,_that.consentGiven,_that.emailSent,_that.busy);case _:
+return $default(_that.stage,_that.role,_that.seniority,_that.result,_that.jobHandle,_that.errorMessage,_that.consentGiven,_that.emailSent,_that.busy);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -224,10 +223,10 @@ return $default(_that.stage,_that.role,_that.seniority,_that.result,_that.jobHan
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ScanStage stage,  JobRole? role,  String? seniority,  AnalysisResult? result,  String? jobHandle,  String? errorMessage,  String? errorCode,  bool consentGiven,  bool emailSent,  bool busy)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ScanStage stage,  JobRole? role,  String? seniority,  AnalysisResult? result,  String? jobHandle,  String? errorMessage,  bool consentGiven,  bool emailSent,  bool busy)?  $default,) {final _that = this;
 switch (_that) {
 case _ScanState() when $default != null:
-return $default(_that.stage,_that.role,_that.seniority,_that.result,_that.jobHandle,_that.errorMessage,_that.errorCode,_that.consentGiven,_that.emailSent,_that.busy);case _:
+return $default(_that.stage,_that.role,_that.seniority,_that.result,_that.jobHandle,_that.errorMessage,_that.consentGiven,_that.emailSent,_that.busy);case _:
   return null;
 
 }
@@ -239,7 +238,7 @@ return $default(_that.stage,_that.role,_that.seniority,_that.result,_that.jobHan
 
 
 class _ScanState implements ScanState {
-  const _ScanState({this.stage = ScanStage.idle, this.role, this.seniority, this.result, this.jobHandle, this.errorMessage, this.errorCode, this.consentGiven = false, this.emailSent = false, this.busy = false});
+  const _ScanState({this.stage = ScanStage.idle, this.role, this.seniority, this.result, this.jobHandle, this.errorMessage, this.consentGiven = false, this.emailSent = false, this.busy = false});
 
 
 @override@JsonKey() final  ScanStage stage;
@@ -248,7 +247,6 @@ class _ScanState implements ScanState {
 @override final  AnalysisResult? result;
 @override final  String? jobHandle;
 @override final  String? errorMessage;
-@override final  String? errorCode;
 @override@JsonKey() final  bool consentGiven;
 @override@JsonKey() final  bool emailSent;
 @override@JsonKey() final  bool busy;
@@ -263,16 +261,16 @@ _$ScanStateCopyWith<_ScanState> get copyWith => __$ScanStateCopyWithImpl<_ScanSt
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ScanState&&(identical(other.stage, stage) || other.stage == stage)&&(identical(other.role, role) || other.role == role)&&(identical(other.seniority, seniority) || other.seniority == seniority)&&(identical(other.result, result) || other.result == result)&&(identical(other.jobHandle, jobHandle) || other.jobHandle == jobHandle)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage)&&(identical(other.errorCode, errorCode) || other.errorCode == errorCode)&&(identical(other.consentGiven, consentGiven) || other.consentGiven == consentGiven)&&(identical(other.emailSent, emailSent) || other.emailSent == emailSent)&&(identical(other.busy, busy) || other.busy == busy));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ScanState&&(identical(other.stage, stage) || other.stage == stage)&&(identical(other.role, role) || other.role == role)&&(identical(other.seniority, seniority) || other.seniority == seniority)&&(identical(other.result, result) || other.result == result)&&(identical(other.jobHandle, jobHandle) || other.jobHandle == jobHandle)&&(identical(other.errorMessage, errorMessage) || other.errorMessage == errorMessage)&&(identical(other.consentGiven, consentGiven) || other.consentGiven == consentGiven)&&(identical(other.emailSent, emailSent) || other.emailSent == emailSent)&&(identical(other.busy, busy) || other.busy == busy));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,stage,role,seniority,result,jobHandle,errorMessage,errorCode,consentGiven,emailSent,busy);
+int get hashCode => Object.hash(runtimeType,stage,role,seniority,result,jobHandle,errorMessage,consentGiven,emailSent,busy);
 
 @override
 String toString() {
-  return 'ScanState(stage: $stage, role: $role, seniority: $seniority, result: $result, jobHandle: $jobHandle, errorMessage: $errorMessage, errorCode: $errorCode, consentGiven: $consentGiven, emailSent: $emailSent, busy: $busy)';
+  return 'ScanState(stage: $stage, role: $role, seniority: $seniority, result: $result, jobHandle: $jobHandle, errorMessage: $errorMessage, consentGiven: $consentGiven, emailSent: $emailSent, busy: $busy)';
 }
 
 
@@ -283,7 +281,7 @@ abstract mixin class _$ScanStateCopyWith<$Res> implements $ScanStateCopyWith<$Re
   factory _$ScanStateCopyWith(_ScanState value, $Res Function(_ScanState) _then) = __$ScanStateCopyWithImpl;
 @override @useResult
 $Res call({
- ScanStage stage, JobRole? role, String? seniority, AnalysisResult? result, String? jobHandle, String? errorMessage, String? errorCode, bool consentGiven, bool emailSent, bool busy
+ ScanStage stage, JobRole? role, String? seniority, AnalysisResult? result, String? jobHandle, String? errorMessage, bool consentGiven, bool emailSent, bool busy
 });
 
 
@@ -300,7 +298,7 @@ class __$ScanStateCopyWithImpl<$Res>
 
 /// Create a copy of ScanState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? stage = null,Object? role = freezed,Object? seniority = freezed,Object? result = freezed,Object? jobHandle = freezed,Object? errorMessage = freezed,Object? errorCode = freezed,Object? consentGiven = null,Object? emailSent = null,Object? busy = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? stage = null,Object? role = freezed,Object? seniority = freezed,Object? result = freezed,Object? jobHandle = freezed,Object? errorMessage = freezed,Object? consentGiven = null,Object? emailSent = null,Object? busy = null,}) {
   return _then(_ScanState(
 stage: null == stage ? _self.stage : stage // ignore: cast_nullable_to_non_nullable
 as ScanStage,role: freezed == role ? _self.role : role // ignore: cast_nullable_to_non_nullable
@@ -308,7 +306,6 @@ as JobRole?,seniority: freezed == seniority ? _self.seniority : seniority // ign
 as String?,result: freezed == result ? _self.result : result // ignore: cast_nullable_to_non_nullable
 as AnalysisResult?,jobHandle: freezed == jobHandle ? _self.jobHandle : jobHandle // ignore: cast_nullable_to_non_nullable
 as String?,errorMessage: freezed == errorMessage ? _self.errorMessage : errorMessage // ignore: cast_nullable_to_non_nullable
-as String?,errorCode: freezed == errorCode ? _self.errorCode : errorCode // ignore: cast_nullable_to_non_nullable
 as String?,consentGiven: null == consentGiven ? _self.consentGiven : consentGiven // ignore: cast_nullable_to_non_nullable
 as bool,emailSent: null == emailSent ? _self.emailSent : emailSent // ignore: cast_nullable_to_non_nullable
 as bool,busy: null == busy ? _self.busy : busy // ignore: cast_nullable_to_non_nullable
